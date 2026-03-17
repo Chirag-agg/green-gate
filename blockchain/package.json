@@ -1,0 +1,16 @@
+{
+  "name": "greengate-blockchain",
+  "version": "1.0.0",
+  "description": "GreenGate Carbon Report Registry - Smart Contract",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "deploy:amoy": "npx hardhat run scripts/deploy.js --network amoy",
+    "deploy:local": "npx hardhat run scripts/deploy.js --network hardhat"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.3"
+  }
+}

@@ -1,0 +1,222 @@
+[
+    {
+        "factory_id": "steel_eaf_ref_1",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "electric_arc_furnace",
+        "production_volume": 900,
+        "electricity_kwh": 360000,
+        "natural_gas_m3": 7000,
+        "emission_intensity": 1.28,
+        "source": "World Steel Association benchmark"
+    },
+    {
+        "factory_id": "steel_eaf_ref_2",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "electric_arc_furnace",
+        "production_volume": 1000,
+        "electricity_kwh": 420000,
+        "natural_gas_m3": 10000,
+        "emission_intensity": 1.4,
+        "source": "World Steel Association benchmark"
+    },
+    {
+        "factory_id": "steel_eaf_ref_3",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "electric_arc_furnace",
+        "production_volume": 1100,
+        "electricity_kwh": 450000,
+        "natural_gas_m3": 11500,
+        "emission_intensity": 1.46,
+        "source": "World Steel Association benchmark"
+    },
+    {
+        "factory_id": "steel_eaf_ref_4",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "electric_arc_furnace",
+        "production_volume": 1250,
+        "electricity_kwh": 495000,
+        "natural_gas_m3": 13000,
+        "emission_intensity": 1.53,
+        "source": "World Steel Association benchmark"
+    },
+    {
+        "factory_id": "steel_eaf_ref_5",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "electric_arc_furnace",
+        "production_volume": 1400,
+        "electricity_kwh": 560000,
+        "natural_gas_m3": 14500,
+        "emission_intensity": 1.62,
+        "source": "World Steel Association benchmark"
+    },
+    {
+        "factory_id": "steel_bf_ref_1",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "blast_furnace",
+        "production_volume": 900,
+        "electricity_kwh": 220000,
+        "natural_gas_m3": 60000,
+        "emission_intensity": 2.05,
+        "source": "IEA steel pathway benchmark"
+    },
+    {
+        "factory_id": "steel_bf_ref_2",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "blast_furnace",
+        "production_volume": 1000,
+        "electricity_kwh": 255000,
+        "natural_gas_m3": 68000,
+        "emission_intensity": 2.19,
+        "source": "IEA steel pathway benchmark"
+    },
+    {
+        "factory_id": "steel_bf_ref_3",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "blast_furnace",
+        "production_volume": 1150,
+        "electricity_kwh": 285000,
+        "natural_gas_m3": 77000,
+        "emission_intensity": 2.31,
+        "source": "IEA steel pathway benchmark"
+    },
+    {
+        "factory_id": "steel_bf_ref_4",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "blast_furnace",
+        "production_volume": 1300,
+        "electricity_kwh": 325000,
+        "natural_gas_m3": 86000,
+        "emission_intensity": 2.44,
+        "source": "IEA steel pathway benchmark"
+    },
+    {
+        "factory_id": "steel_bf_ref_5",
+        "industry": "steel",
+        "product_type": "steel",
+        "machinery": "blast_furnace",
+        "production_volume": 1450,
+        "electricity_kwh": 360000,
+        "natural_gas_m3": 95000,
+        "emission_intensity": 2.56,
+        "source": "IEA steel pathway benchmark"
+    },
+    {
+        "factory_id": "cement_rk_ref_1",
+        "industry": "cement",
+        "product_type": "cement",
+        "machinery": "rotary_kiln",
+        "production_volume": 900,
+        "electricity_kwh": 95000,
+        "natural_gas_m3": 29000,
+        "emission_intensity": 0.72,
+        "source": "Global Cement and Concrete Association benchmark"
+    },
+    {
+        "factory_id": "cement_rk_ref_2",
+        "industry": "cement",
+        "product_type": "cement",
+        "machinery": "rotary_kiln",
+        "production_volume": 1000,
+        "electricity_kwh": 108000,
+        "natural_gas_m3": 32000,
+        "emission_intensity": 0.78,
+        "source": "Global Cement and Concrete Association benchmark"
+    },
+    {
+        "factory_id": "cement_rk_ref_3",
+        "industry": "cement",
+        "product_type": "cement",
+        "machinery": "rotary_kiln",
+        "production_volume": 1150,
+        "electricity_kwh": 122000,
+        "natural_gas_m3": 35500,
+        "emission_intensity": 0.82,
+        "source": "Global Cement and Concrete Association benchmark"
+    },
+    {
+        "factory_id": "cement_rk_ref_4",
+        "industry": "cement",
+        "product_type": "cement",
+        "machinery": "rotary_kiln",
+        "production_volume": 1300,
+        "electricity_kwh": 138000,
+        "natural_gas_m3": 39000,
+        "emission_intensity": 0.87,
+        "source": "Global Cement and Concrete Association benchmark"
+    },
+    {
+        "factory_id": "cement_rk_ref_5",
+        "industry": "cement",
+        "product_type": "cement",
+        "machinery": "rotary_kiln",
+        "production_volume": 1450,
+        "electricity_kwh": 154000,
+        "natural_gas_m3": 43000,
+        "emission_intensity": 0.93,
+        "source": "Global Cement and Concrete Association benchmark"
+    },
+    {
+        "factory_id": "al_sm_ref_1",
+        "industry": "aluminum",
+        "product_type": "aluminum",
+        "machinery": "smelter",
+        "production_volume": 900,
+        "electricity_kwh": 1220000,
+        "natural_gas_m3": 5000,
+        "emission_intensity": 1.35,
+        "source": "International Aluminium Institute benchmark"
+    },
+    {
+        "factory_id": "al_sm_ref_2",
+        "industry": "aluminum",
+        "product_type": "aluminum",
+        "machinery": "smelter",
+        "production_volume": 1000,
+        "electricity_kwh": 1350000,
+        "natural_gas_m3": 5600,
+        "emission_intensity": 1.44,
+        "source": "International Aluminium Institute benchmark"
+    },
+    {
+        "factory_id": "al_sm_ref_3",
+        "industry": "aluminum",
+        "product_type": "aluminum",
+        "machinery": "smelter",
+        "production_volume": 1150,
+        "electricity_kwh": 1520000,
+        "natural_gas_m3": 6200,
+        "emission_intensity": 1.56,
+        "source": "International Aluminium Institute benchmark"
+    },
+    {
+        "factory_id": "al_sm_ref_4",
+        "industry": "aluminum",
+        "product_type": "aluminum",
+        "machinery": "smelter",
+        "production_volume": 1300,
+        "electricity_kwh": 1710000,
+        "natural_gas_m3": 7000,
+        "emission_intensity": 1.68,
+        "source": "International Aluminium Institute benchmark"
+    },
+    {
+        "factory_id": "al_sm_ref_5",
+        "industry": "aluminum",
+        "product_type": "aluminum",
+        "machinery": "smelter",
+        "production_volume": 1450,
+        "electricity_kwh": 1890000,
+        "natural_gas_m3": 7800,
+        "emission_intensity": 1.79,
+        "source": "International Aluminium Institute benchmark"
+    }
+]

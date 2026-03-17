@@ -1,0 +1,38 @@
+{
+  "grid_electricity": {
+    "national_average": 0.82,
+    "states": {
+      "Maharashtra": 0.72,
+      "Gujarat": 0.79,
+      "Punjab": 0.65,
+      "Rajasthan": 0.85,
+      "Odisha": 0.91,
+      "Tamil Nadu": 0.82,
+      "Karnataka": 0.65,
+      "West Bengal": 0.88,
+      "Uttar Pradesh": 0.86,
+      "Haryana": 0.77
+    }
+  },
+  "fuels": {
+    "coal": { "factor": 2.42, "unit": "kg_co2_per_kg" },
+    "natural_gas": { "factor": 2.04, "unit": "kg_co2_per_m3" },
+    "diesel": { "factor": 2.68, "unit": "kg_co2_per_litre" },
+    "lpg": { "factor": 2.98, "unit": "kg_co2_per_litre" },
+    "furnace_oil": { "factor": 3.17, "unit": "kg_co2_per_litre" },
+    "biomass": { "factor": 0.0, "unit": "kg_co2_per_kg" },
+    "petcoke": { "factor": 3.28, "unit": "kg_co2_per_kg" }
+  },
+  "sector_benchmarks": {
+    "steel_bfbof": { "benchmark_tco2_per_tonne": 1.85 },
+    "steel_eaf": { "benchmark_tco2_per_tonne": 0.46 },
+    "cement": { "benchmark_tco2_per_tonne": 0.83 },
+    "aluminium_primary": { "benchmark_tco2_per_tonne": 1.68 },
+    "aluminium_secondary": { "benchmark_tco2_per_tonne": 0.53 },
+    "fertilizer_urea": { "benchmark_tco2_per_tonne": 2.30 },
+    "hydrogen_grey": { "benchmark_tco2_per_kg": 10.5 },
+    "hydrogen_blue": { "benchmark_tco2_per_kg": 3.5 },
+    "hydrogen_green": { "benchmark_tco2_per_kg": 0.9 }
+  },
+  "eu_carbon_price_eur_per_tonne": 90.0
+}

@@ -1,0 +1,20 @@
+{
+    "India": {
+        "renewable_share": 0.28
+    },
+    "Maharashtra": {
+        "renewable_share": 0.24
+    },
+    "Gujarat": {
+        "renewable_share": 0.29
+    },
+    "Tamil Nadu": {
+        "renewable_share": 0.44
+    },
+    "Karnataka": {
+        "renewable_share": 0.40
+    },
+    "Rajasthan": {
+        "renewable_share": 0.38
+    }
+}

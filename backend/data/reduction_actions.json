@@ -1,0 +1,38 @@
+{
+    "steel": [
+        {
+            "action": "waste_heat_recovery",
+            "reduction_percent": 0.12,
+            "payback_years": 3
+        },
+        {
+            "action": "variable_speed_drives",
+            "reduction_percent": 0.08,
+            "payback_years": 1.5
+        }
+    ],
+    "cement": [
+        {
+            "action": "kiln_heat_optimization",
+            "reduction_percent": 0.1,
+            "payback_years": 2.5
+        },
+        {
+            "action": "waste_heat_recovery",
+            "reduction_percent": 0.09,
+            "payback_years": 3.2
+        }
+    ],
+    "aluminum": [
+        {
+            "action": "inert_anode_upgrade",
+            "reduction_percent": 0.14,
+            "payback_years": 4
+        },
+        {
+            "action": "power_factor_optimization",
+            "reduction_percent": 0.06,
+            "payback_years": 1.8
+        }
+    ]
+}

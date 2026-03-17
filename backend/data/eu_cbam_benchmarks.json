@@ -1,0 +1,74 @@
+{
+  "steel": {
+    "benchmark_tco2_per_ton": 1.1,
+    "carbon_price_eur": 90
+  },
+  "iron": {
+    "benchmark_tco2_per_ton": 1.3,
+    "carbon_price_eur": 90
+  },
+  "cement": {
+    "benchmark_tco2_per_ton": 0.9,
+    "carbon_price_eur": 90
+  },
+  "aluminium": {
+    "benchmark_tco2_per_ton": 8.5,
+    "carbon_price_eur": 90
+  },
+  "aluminum": {
+    "benchmark_tco2_per_ton": 8.5,
+    "carbon_price_eur": 90
+  },
+  "fertilisers": {
+    "benchmark_tco2_per_ton": 1.5,
+    "carbon_price_eur": 90
+  },
+  "fertilizers": {
+    "benchmark_tco2_per_ton": 1.5,
+    "carbon_price_eur": 90
+  },
+  "electricity": {
+    "benchmark_tco2_per_ton": 0.5,
+    "carbon_price_eur": 90
+  },
+  "automotive": {
+    "benchmark_tco2_per_ton": 2.5,
+    "carbon_price_eur": 90
+  },
+  "chemicals": {
+    "benchmark_tco2_per_ton": 1.2,
+    "carbon_price_eur": 90
+  },
+  "textiles": {
+    "benchmark_tco2_per_ton": 0.8,
+    "carbon_price_eur": 90
+  },
+  "electronics": {
+    "benchmark_tco2_per_ton": 0.4,
+    "carbon_price_eur": 90
+  },
+  "copper": {
+    "benchmark_tco2_per_ton": 2.3,
+    "carbon_price_eur": 90
+  },
+  "glass": {
+    "benchmark_tco2_per_ton": 0.7,
+    "carbon_price_eur": 90
+  },
+  "paper": {
+    "benchmark_tco2_per_ton": 0.7,
+    "carbon_price_eur": 90
+  },
+  "food_processing": {
+    "benchmark_tco2_per_ton": 0.3,
+    "carbon_price_eur": 90
+  },
+  "mining": {
+    "benchmark_tco2_per_ton": 0.4,
+    "carbon_price_eur": 90
+  },
+  "default": {
+    "benchmark_tco2_per_ton": 1.5,
+    "carbon_price_eur": 90
+  }
+}

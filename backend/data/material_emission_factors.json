@@ -1,0 +1,12 @@
+{
+    "iron_ore": {
+        "Australia": 0.45,
+        "India": 0.52
+    },
+    "scrap_steel": {
+        "global": 0.15
+    },
+    "coking_coal": {
+        "Australia": 0.9
+    }
+}
