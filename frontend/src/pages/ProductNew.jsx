@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { confirmProductSupplyChain, discoverProductSupplyChain } from '../utils/api';
-import { ArrowLeft, ArrowRight, Factory, Zap, CheckCircle2, PackageSearch } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, PackageSearch } from 'lucide-react';
 
 const PIPELINE_STEPS = [
     'Analyzing manufacturer networks',
@@ -38,7 +38,6 @@ export default function ProductNew() {
     const [confirming, setConfirming] = useState(false);
     const [loadingStep, setLoadingStep] = useState(0);
     const [discovery, setDiscovery] = useState(null);
-    const [editableNodes, setEditableNodes] = useState([]);
 
     const handleAnswerChange = (field, value) => {
         setAnswers(prev => ({ ...prev, [field]: value }));
@@ -59,7 +58,7 @@ export default function ProductNew() {
     };
 
     const graphNodes = useMemo(
-        () => editableNodes.map((node, index) => ({
+        () => (discovery?.nodes || []).map((node, index) => ({
             id: node.id || `idx-${index}`,
             position: { x: 70 + (index * 240), y: 80 },
             data: {
@@ -83,7 +82,7 @@ export default function ProductNew() {
                 fontSize: 14,
             },
         })),
-        [editableNodes]
+        [discovery?.nodes]
     );
 
     const graphEdges = useMemo(() => {
@@ -98,14 +97,15 @@ export default function ProductNew() {
             }));
         }
 
-        return editableNodes.slice(0, -1).map((node, index) => ({
+        const nodes = discovery?.nodes || [];
+        return nodes.slice(0, -1).map((node, index) => ({
             id: `chain-${index}`,
-            source: editableNodes[index].id || `idx-${index}`,
-            target: editableNodes[index + 1].id || `idx-${index + 1}`,
+            source: nodes[index].id || `idx-${index}`,
+            target: nodes[index + 1].id || `idx-${index + 1}`,
             label: 'supplies to',
             style: { stroke: '#94a3b8', strokeWidth: 2 },
         }));
-    }, [discovery?.edges, editableNodes]);
+    }, [discovery?.edges, discovery?.nodes]);
 
     const runDiscovery = async () => {
         setLoading(true);
@@ -126,11 +126,6 @@ export default function ProductNew() {
 
             const res = await discoverProductSupplyChain(syntheticPayload);
             setDiscovery(res.data);
-            setEditableNodes((res.data.nodes || []).map((node) => ({
-                ...node,
-                role: ensureRole(node.role),
-                confidence_score: Number(node.confidence_score ?? 0.75),
-            })));
             setStep(6); // Move to results view
             toast.success('Supply chain mapped successfully');
         } catch (err) {
@@ -142,16 +137,12 @@ export default function ProductNew() {
         }
     };
 
-    const updateNode = (id, field, value) => {
-        setEditableNodes((prev) => prev.map((node) => (node.id === id ? { ...node, [field]: value } : node)));
-    };
-
     const confirmSupplyChain = async () => {
         if (!discovery?.product_id) {
             return;
         }
 
-        const cleanedNodes = editableNodes
+        const cleanedNodes = (discovery?.nodes || [])
             .map((node, index) => ({
                 id: node.id || `idx-${index}`,
                 company_name: String(node.company_name || '').trim(),
@@ -174,7 +165,6 @@ export default function ProductNew() {
                 edges: [],
             });
             setDiscovery(res.data);
-            setEditableNodes(res.data.nodes || []);
             toast.success('Supply chain finalized');
             navigate(`/product/${res.data.product_id}`);
         } catch (err) {
@@ -210,7 +200,7 @@ export default function ProductNew() {
                             <div className="animate-fade-in">
                                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">What main raw material do you purchase for production?</h2>
                                 <input
-                                    className="input-field text-lg py-4 px-6 bg-white/50 focus:bg-white"
+                                    className="input-field text-lg py-4 px-6"
                                     placeholder="e.g., MS Billets, Raw Aluminium, Iron Ore"
                                     value={answers.rawMaterial}
                                     onChange={(e) => handleAnswerChange('rawMaterial', e.target.value)}
@@ -223,7 +213,7 @@ export default function ProductNew() {
                             <div className="animate-fade-in">
                                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Who is your primary supplier for this material?</h2>
                                 <input
-                                    className="input-field text-lg py-4 px-6 bg-white/50 focus:bg-white"
+                                    className="input-field text-lg py-4 px-6"
                                     placeholder="e.g., Tata Steel, Hindalco, Harpreet Steel"
                                     value={answers.supplierName}
                                     onChange={(e) => handleAnswerChange('supplierName', e.target.value)}
@@ -240,7 +230,7 @@ export default function ProductNew() {
                             <div className="animate-fade-in">
                                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">In which state is your factory located?</h2>
                                 <input
-                                    className="input-field text-lg py-4 px-6 bg-white/50 focus:bg-white"
+                                    className="input-field text-lg py-4 px-6"
                                     placeholder="e.g., Punjab, Odisha, Maharashtra"
                                     value={answers.locationGrid}
                                     onChange={(e) => handleAnswerChange('locationGrid', e.target.value)}
@@ -253,7 +243,7 @@ export default function ProductNew() {
                             <div className="animate-fade-in">
                                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">What fuel runs your main furnaces or machinery?</h2>
                                 <input
-                                    className="input-field text-lg py-4 px-6 bg-white/50 focus:bg-white"
+                                    className="input-field text-lg py-4 px-6"
                                     placeholder="e.g., Grid Electricity, Coal, Diesel Generator"
                                     value={answers.fuelMachinery}
                                     onChange={(e) => handleAnswerChange('fuelMachinery', e.target.value)}
@@ -266,7 +256,7 @@ export default function ProductNew() {
                             <div className="animate-fade-in">
                                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">What is your rough monthly production volume (in tonnes)?</h2>
                                 <input
-                                    className="input-field text-lg py-4 px-6 bg-white/50 focus:bg-white"
+                                    className="input-field text-lg py-4 px-6"
                                     placeholder="e.g., 40"
                                     type="number"
                                     value={answers.productionVolume}
@@ -328,10 +318,10 @@ export default function ProductNew() {
                 <div className="max-w-7xl mx-auto animate-fade-in">
                     <div className="mb-8">
                         <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Supply Chain map</h1>
-                        <p className="text-gray-500 text-lg">Review and verify the path from raw material to your factory.</p>
+                        <p className="text-gray-500 text-lg">This map is locked from AI-discovered supplier intelligence.</p>
                     </div>
 
-                    <div className="card-glass p-6 mb-8 border border-white/40">
+                    <div className="card-glass p-6 mb-8">
                         {graphNodes.length > 0 ? (
                             <div className="rounded-2xl overflow-hidden bg-slate-50/50" style={{ height: 400 }}>
                                 <ReactFlow
@@ -353,54 +343,10 @@ export default function ProductNew() {
                     </div>
 
                     <div className="card-glass p-6 md:p-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                            <Factory className="text-primary-600" />
-                            Verify Final Details
-                        </h2>
-                        
-                        <div className="space-y-4">
-                            {editableNodes.map((node, index) => (
-                                <div key={node.id} className="rounded-2xl border border-gray-200 bg-white/40 p-5 hover:bg-white/60 transition-colors">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Company</label>
-                                            <input 
-                                                className="input-field bg-transparent border-gray-200 focus:bg-white" 
-                                                value={node.company_name || ''} 
-                                                onChange={(e) => updateNode(node.id, 'company_name', e.target.value)} 
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Role</label>
-                                            <select 
-                                                className="input-field bg-transparent border-gray-200 focus:bg-white font-semibold text-primary-900" 
-                                                value={node.role || 'manufacturing'} 
-                                                onChange={(e) => updateNode(node.id, 'role', e.target.value)}
-                                            >
-                                                <option value="raw_material">Raw Material Supplier</option>
-                                                <option value="processing">Processing Plant</option>
-                                                <option value="manufacturing">Manufacturing</option>
-                                                <option value="assembly">Assembly</option>
-                                                <option value="logistics">Logistics Provider</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Location</label>
-                                            <input 
-                                                className="input-field bg-transparent border-gray-200 focus:bg-white" 
-                                                value={node.location || ''} 
-                                                onChange={(e) => updateNode(node.id, 'location', e.target.value)} 
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
                         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-between items-center bg-primary-50 rounded-2xl p-6">
                             <div className="text-primary-900">
                                 <p className="font-bold">Ready to calculate emissions?</p>
-                                <p className="text-sm text-primary-700 mt-1">We will now analyze these factories using trusted AI to verify their footprints.</p>
+                                <p className="text-sm text-primary-700 mt-1">Supplier details are auto-locked to prevent manual tampering and model drift.</p>
                             </div>
                             <button 
                                 onClick={confirmSupplyChain} 

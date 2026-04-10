@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 class WhisperService:
     """Wrapper around local Whisper model."""
+
+    SUPPORTED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".ogg", ".webm", ".mp4"}
 
     def __init__(self) -> None:
         self.model_name = os.getenv("WHISPER_MODEL", "tiny").strip() or "tiny"
@@ -33,6 +36,26 @@ class WhisperService:
         return self._model
 
     @staticmethod
+    def _ensure_ffmpeg_available() -> None:
+        if shutil.which("ffmpeg") is not None:
+            return
+
+        try:
+            import imageio_ffmpeg  # type: ignore
+        except Exception as exc:
+            raise RuntimeError(
+                "ffmpeg is required for audio transcription. Install ffmpeg or imageio-ffmpeg."
+            ) from exc
+
+        ffmpeg_exe = Path(imageio_ffmpeg.get_ffmpeg_exe())
+        os.environ["PATH"] = f"{ffmpeg_exe.parent};{os.environ.get('PATH', '')}"
+
+        if shutil.which("ffmpeg") is None:
+            raise RuntimeError(
+                "ffmpeg could not be initialized. Install ffmpeg or imageio-ffmpeg and ensure audio decoding is available."
+            )
+
+    @staticmethod
     def detect_language_heuristic(text: str) -> str:
         """Simple heuristic language detector (bonus MVP)."""
         t = (text or "").lower()
@@ -45,11 +68,13 @@ class WhisperService:
         return "english"
 
     async def transcribe_upload(self, audio_file: UploadFile) -> dict[str, str]:
-        """Transcribe WAV/MP3 audio and return cleaned transcript + heuristic language."""
+        """Transcribe common browser audio formats and return cleaned transcript + heuristic language."""
         filename = str(audio_file.filename or "audio")
         extension = Path(filename).suffix.lower()
-        if extension not in {".wav", ".mp3", ".m4a", ".ogg"}:
-            raise ValueError("Unsupported audio format. Use wav/mp3/m4a/ogg.")
+        if extension not in self.SUPPORTED_EXTENSIONS:
+            raise ValueError("Unsupported audio format. Use wav/mp3/m4a/ogg/webm/mp4.")
+
+        self._ensure_ffmpeg_available()
 
         model = self._load_model()
         temp_path: str | None = None

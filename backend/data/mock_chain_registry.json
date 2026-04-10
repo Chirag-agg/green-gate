@@ -1,0 +1,92 @@
+{
+  "reports": {
+    "0x0a6a395c73e761061161e81c9576eb3afc15674754a62a4efd3ad3c63b7c273d": {
+      "co2_kg": 61032,
+      "company_name": "Britannia Small Processing Unit (simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-FOOD-2026",
+      "timestamp": 1775856274,
+      "tx_hash": "0x4e286a3a05a3c1b06cd07c50c8e73759d4996d46fd7ad7bc4907e7d8e44a66a7"
+    },
+    "0x0bfb6b352abba1b71fd92f8fca5760d4303e8d14dba3c2158a23436cc546f45b": {
+      "co2_kg": 61032,
+      "company_name": "Britannia Small Processing Unit (simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-FOOD-2026",
+      "timestamp": 1775856605,
+      "tx_hash": "0x976fb8924c387d85e45984e88e7631962d2a803413af1348149279d28ce189b6"
+    },
+    "0x22b5b6a8a65c04b18105f537e56f1b8833ba74b16637bb864162a6f87bf36ae6": {
+      "co2_kg": 341568,
+      "company_name": "Arvind Limited (SME unit simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-TEXTILE-2026",
+      "timestamp": 1775856603,
+      "tx_hash": "0x0e64b76eb9440015f5757be2cb0b45d2c92679f3ab23a6206fc17f522e9d9bfd"
+    },
+    "0x4493b386a7c39d5d2ad9afe2c727cfe914efd6b7ad30d66dfc19225e3dab2012": {
+      "co2_kg": 642720,
+      "company_name": "Tata Steel Processing Unit (mid-scale simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-STEEL-2026",
+      "timestamp": 1775856604,
+      "tx_hash": "0xd8c5dd75c02e552fb5c3ae3fd57e4b44f1f3c4ab87fa492ef70c6deefc23dd1e"
+    },
+    "0x65e8bc3f0933ea067c00d433913dbcd3be79ce80e9fd6829487a02a8bdb8662f": {
+      "co2_kg": 341568,
+      "company_name": "Arvind Limited (SME unit simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-TEXTILE-2026",
+      "timestamp": 1775856325,
+      "tx_hash": "0x2adda5885852baa7e634bff048d562e48034f7659931396be91f75670acb34de"
+    },
+    "0x7c00da9665cd78e2157e49d825f30ceede93c1f36ca6b9a170df15034144e824": {
+      "co2_kg": 341568,
+      "company_name": "Arvind Limited (SME unit simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-TEXTILE-2026",
+      "timestamp": 1775856271,
+      "tx_hash": "0xc9325b3ad995e93e89bdd9dd544b28cd2c8b8e7144f8a255bdaa3470feb2b333"
+    },
+    "0xabababababababababababababababababababababababababababababababab": {
+      "co2_kg": 12345,
+      "company_name": "Demo Co",
+      "is_valid": true,
+      "report_id": "GG-TEST-1",
+      "timestamp": 1775854978,
+      "tx_hash": "0xed0867a2c6dd557f194ad304c07a947d999c3beb71b681503743bfa186807077"
+    },
+    "0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd": {
+      "co2_kg": 123,
+      "company_name": "Demo",
+      "is_valid": true,
+      "report_id": "GG-LOCAL-1",
+      "timestamp": 1775856284,
+      "tx_hash": "0x99b88b720dc45cfffd239ec0cdbd86a1900c9633349e1478e608715cc39c6ec7"
+    },
+    "0xdc129a7534509eeb5e0f1b5704be5e36e04eba763ee6a233c05d547a51ccc125": {
+      "co2_kg": 61032,
+      "company_name": "Britannia Small Processing Unit (simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-FOOD-2026",
+      "timestamp": 1775856329,
+      "tx_hash": "0x81fb8861b5bae0a82ffc9ec5dd0db0915b79a6691f58c76446f9d6e4f71c8fef"
+    },
+    "0xe24466409058499ef6b78c4ae99ae390f35d83175eed5c69571ca58826b000d6": {
+      "co2_kg": 642720,
+      "company_name": "Tata Steel Processing Unit (mid-scale simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-STEEL-2026",
+      "timestamp": 1775856273,
+      "tx_hash": "0xc2e4c0ce5b9feeee0ac044f6a3e3eecbfbfba29eb75b45559282e8eedd9ef7a1"
+    },
+    "0xfb2974f1b3bfa47f6c79774808ca71743c6ebca5db64b28c37a44549206ce46d": {
+      "co2_kg": 642720,
+      "company_name": "Tata Steel Processing Unit (mid-scale simulation)",
+      "is_valid": true,
+      "report_id": "GG-DEMO-STEEL-2026",
+      "timestamp": 1775856328,
+      "tx_hash": "0xf900df2d9d9e943d185e45f006db7ad637b68f2891d0f6de6522816eb91aea5f"
+    }
+  }
+}

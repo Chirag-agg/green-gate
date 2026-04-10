@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from web3 import Web3
@@ -104,6 +105,9 @@ class BlockchainService:
             "yes",
             "on",
         }
+        self.mock_registry_file = (
+            Path(__file__).resolve().parent.parent / "data" / "mock_chain_registry.json"
+        )
 
         self.w3 = Web3(Web3.HTTPProvider(rpc_url))
         # Inject POA middleware for Polygon (Amoy is a POA chain)
@@ -154,6 +158,27 @@ class BlockchainService:
             },
         )
 
+    def _load_mock_registry(self) -> dict[str, Any]:
+        if not self.mock_registry_file.exists():
+            return {"reports": {}}
+        try:
+            content = self.mock_registry_file.read_text(encoding="utf-8")
+            parsed = json.loads(content)
+            reports = parsed.get("reports", {}) if isinstance(parsed, dict) else {}
+            return {"reports": reports if isinstance(reports, dict) else {}}
+        except Exception:
+            return {"reports": {}}
+
+    def _save_mock_registry(self, registry: dict[str, Any]) -> None:
+        try:
+            self.mock_registry_file.parent.mkdir(parents=True, exist_ok=True)
+            self.mock_registry_file.write_text(
+                json.dumps(registry, indent=2, sort_keys=True),
+                encoding="utf-8",
+            )
+        except Exception as exc:
+            logger.warn("mock_registry_save_failed", {"error": str(exc)})
+
     @staticmethod
     def generate_report_hash(report_dict: dict[str, Any]) -> str:
         """
@@ -188,23 +213,35 @@ class BlockchainService:
         Returns:
             Dictionary with tx_hash, block_number, and polygonscan_url.
         """
+        if self.mock_mode:
+            fake_tx_hash = "0x" + hashlib.sha256(f"{report_id}:{report_hash}".encode("utf-8")).hexdigest()
+            now_ts = int(datetime.now(timezone.utc).timestamp())
+            registry = self._load_mock_registry()
+            registry.setdefault("reports", {})[report_hash.lower()] = {
+                "is_valid": True,
+                "report_id": report_id,
+                "timestamp": now_ts,
+                "company_name": company_name,
+                "co2_kg": int(co2_kg),
+                "tx_hash": fake_tx_hash,
+            }
+            self._save_mock_registry(registry)
+            logger.warn(
+                "mock_submit_used",
+                {
+                    "report_id": report_id,
+                    "report_hash": report_hash,
+                    "company_name": company_name,
+                    "co2_kg": co2_kg,
+                },
+            )
+            return {
+                "tx_hash": fake_tx_hash,
+                "block_number": 0,
+                "polygonscan_url": "mock://local-chain/tx/" + fake_tx_hash,
+            }
+
         if not self.contract or not self.account:
-            if self.mock_mode:
-                fake_tx_hash = "0x" + hashlib.sha256(f"{report_id}:{report_hash}".encode("utf-8")).hexdigest()
-                logger.warn(
-                    "mock_submit_used",
-                    {
-                        "report_id": report_id,
-                        "report_hash": report_hash,
-                        "company_name": company_name,
-                        "co2_kg": co2_kg,
-                    },
-                )
-                return {
-                    "tx_hash": fake_tx_hash,
-                    "block_number": 0,
-                    "polygonscan_url": "mock://local-chain/tx/" + fake_tx_hash,
-                }
             raise ValueError(
                 "Blockchain service not configured. "
                 "Set CONTRACT_ADDRESS and SIGNER_PRIVATE_KEY in .env"
@@ -281,6 +318,30 @@ class BlockchainService:
         Returns:
             Dictionary with is_valid, report_id, timestamp, and timestamp_readable.
         """
+        if self.mock_mode:
+            registry = self._load_mock_registry()
+            key = report_hash.lower()
+            record = registry.get("reports", {}).get(key)
+            if record:
+                timestamp = int(record.get("timestamp", 0) or 0)
+                timestamp_readable: str = ""
+                if timestamp > 0:
+                    timestamp_readable = datetime.fromtimestamp(
+                        timestamp, tz=timezone.utc
+                    ).strftime("%Y-%m-%d %H:%M:%S UTC")
+                return {
+                    "is_valid": bool(record.get("is_valid", False)),
+                    "report_id": str(record.get("report_id", "")),
+                    "timestamp": timestamp,
+                    "timestamp_readable": timestamp_readable,
+                }
+            return {
+                "is_valid": False,
+                "report_id": "",
+                "timestamp": 0,
+                "timestamp_readable": "",
+            }
+
         if not self.contract:
             raise ValueError(
                 "Blockchain service not configured. Set CONTRACT_ADDRESS in .env"

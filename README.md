@@ -1,253 +1,188 @@
-# 🌿 GreenGate — AI + Blockchain CBAM Carbon Compliance Platform
+# GreenGate
 
-**For Indian MSME Exporters**
+> **Carbon data that cannot be trusted should not be certified.** GreenGate turns noisy industrial inputs into verified carbon evidence for CBAM-ready MSMEs.
 
-GreenGate helps Indian MSMEs exporting to the European Union comply with the **Carbon Border Adjustment Mechanism (CBAM)** regulation. It calculates carbon emissions, generates AI-powered reduction recommendations, and stores immutable certificates on the Polygon blockchain.
-
----
-
-## 🛠 Tech Stack
-
-| Layer            | Technology                                        |
-|-----------------|---------------------------------------------------|
-| **Frontend**     | React + Vite + TailwindCSS + ethers.js            |
-| **Backend**      | Python FastAPI + SQLAlchemy + web3.py + OpenAI SDK |
-| **Database**     | SQLite                                            |
-| **Blockchain**   | Polygon Amoy Testnet (EVM-compatible)              |
-| **Smart Contract** | Solidity 0.8.x (Hardhat)                       |
-| **AI Engine**    | Rule-based IPCC calculator + Cerebras/Ollama fallback stack |
+[![License: MIT](https://img.shields.io/badge/License-MIT-14532d?style=for-the-badge)](LICENSE)
+[![Status: Hackathon Ready](https://img.shields.io/badge/Status-Hackathon%20Ready-0f766e?style=for-the-badge)]()
+[![Stack: FastAPI + React](https://img.shields.io/badge/Stack-FastAPI%20%2B%20React-1d4ed8?style=for-the-badge)]()
+[![CBAM Focus](https://img.shields.io/badge/Focus-CBAM%20Data%20Trust-7c3aed?style=for-the-badge)]()
 
 ---
 
-## 🚀 Quick Start
+##  Overview
 
-### Prerequisites
+GreenGate is a **Carbon Data Trust Engine** for industrial MSMEs that need to report carbon data with confidence. Instead of treating every input as equally valid, GreenGate checks whether the underlying data is internally consistent, physically plausible, behaviorally stable, and backed by evidence.
 
-- **Node.js** ≥ 18
-- **Python** ≥ 3.10
-- **MetaMask** browser extension
-- (Optional) **OpenAI API Key** for AI recommendations
+That matters because CBAM exposure is not just about emissions volume. It is about whether the reported data can survive scrutiny from buyers, auditors, and regulators.
 
-### 1. Blockchain Setup (do this FIRST)
-
-```bash
-cd blockchain
-npm install
-npx hardhat compile
-```
-
-To deploy to Polygon Amoy testnet:
-
-1. Get a wallet private key and add test MATIC from <https://faucet.polygon.technology>
-2. Update `blockchain/.env` with your `DEPLOYER_PRIVATE_KEY`
-3. Run:
-
-```bash
-npx hardhat run scripts/deploy.js --network amoy
-```
-
-1. Copy the printed `CONTRACT_ADDRESS` to `backend/.env` and `frontend/.env`
-
-### 2. Backend Setup
-
-```bash
-cd backend
-pip install -r requirements.txt
-```
-
-Edit `backend/.env`:
-
-- Set `OPENAI_API_KEY` (optional — fallback recommendations will be used if not set)
-- Set `SIGNER_PRIVATE_KEY` (your backend wallet private key for blockchain submissions)
-- Set `CONTRACT_ADDRESS` (from Step 1)
-
-Start the server:
-
-```bash
-uvicorn main:app --reload --port 8000
-```
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The app will be available at **<http://localhost:5173>**
-
-### 4. MetaMask Setup
-
-1. Install **MetaMask** browser extension
-2. The app will automatically prompt you to add **Polygon Amoy** network
-3. Get free test MATIC from: <https://faucet.polygon.technology>
+> **Callout:** GreenGate validates trust before it computes outcomes.
 
 ---
 
-## 📋 Features
+##  Problem Statement
 
-- **🔬 AI Carbon Calculator** — Uses IPCC/CEA emission factors for accurate Scope 1 & 2 calculations
-- **🤖 AI Recommendations** — Cerebras-first with local fallback and deterministic backup recommendations
-- **🔗 Blockchain Certification** — Immutable report hashes on Polygon for trustless verification
-- **✅ Public Verification** — EU importers can verify certificates without any login
-- **📊 CBAM Reports** — Downloadable reports in EU-compatible format
-- **📈 Sector Benchmarks** — Compare your emissions against industry standards
-- **🏭 Product Supply Chain Discovery** — LLM-planned company/supplier verification queries + graph-based traceability
-- **🧪 Factory Intelligence + Optimization** — Per-factory emissions analysis and supplier replacement simulation
-- **📎 Evidence Upload Workflow** — Support low-confidence reports with PDF evidence before certification
+Carbon reporting often fails at the input layer, not the calculation layer.
+
+- Industrial data is frequently incomplete, estimated, duplicated, or manually edited.
+- MSMEs usually do not have dedicated sustainability teams, audit trails, or data governance systems.
+- Under CBAM, weak data quality can lead to incorrect disclosures, financial penalties, and reputational risk.
+
+In practice, many tools tell companies how much carbon they emit. Far fewer tools can tell them whether the data driving that number is actually trustworthy.
 
 ---
 
-## 🧭 Architecture Flow
+##  Solution
 
-```mermaid
-flowchart LR
-        %% -------- Users & Frontend --------
-        U[MSME User]
-        VU[EU Importer / Public Verifier]
-        FE[Frontend Dashboard<br/>React + Vite]
-        U --> FE
-        VU --> FE
+GreenGate is built as a **trust layer for carbon reporting**.
 
-        %% -------- API Layer --------
-        subgraph API[FastAPI Layer]
-            direction TB
-            AUTH[/Auth Router<br/>register/login/me/]
-            CALC[/Calculator Router<br/>company-intelligence/calculate/simulate-reduction/]
-            PROD[/Products Router<br/>discover/confirm/analyze/aggregate/optimize/]
-            REP[/Reports Router<br/>list/get/upload-evidence/certify/download/]
-            VER[/Verify Router<br/>public hash verification/]
-        end
+It does not behave like a simple calculator. It acts like a carbon data validator that inspects electricity, production, and fuel inputs before those inputs are converted into compliance-ready outputs.
 
-        FE -->|1. JWT auth| AUTH
-        FE -->|2. Emission submission| CALC
-        FE -->|3. Product graph workflow| PROD
-        FE -->|4. Reports + evidence + certify| REP
-        FE -->|5. Public verification| VER
+The result is a more defensible reporting workflow for MSMEs, with fewer blind spots and less risk of passing bad data downstream into CBAM submissions.
 
-        %% -------- Service Layer --------
-        subgraph CORE[Core Services]
-            direction LR
-            ENG[Emission + Verification Engines<br/>IPCC/CBAM/benchmark/confidence]
-            AI[AI Recommendation Service<br/>Cerebras primary → Ollama fallback → deterministic fallback]
-            DISC[Supply Chain Discovery Service<br/>LLM plans company-first then supplier verification queries]
-            FACT[Factory Intelligence Service<br/>machinery extraction + per-node emissions]
-            AGG[Product Aggregation Service<br/>product footprint + CBAM risk]
-            OPT[Supply Chain Optimizer<br/>replacement simulation + savings]
-            CHAIN[Blockchain Service<br/>web3.py signing + tx submit]
-        end
+---
 
-        CALC --> ENG
-        CALC --> AI
+##  Key Innovation
 
-        PROD --> DISC --> FACT --> AGG --> OPT
-        DISC --> AI
-        FACT --> AI
+**Carbon Data Trust Engine**
 
-        REP --> CHAIN
+**Multi-layer validation system**
 
-        %% -------- Persistence --------
-        PERSIST[(Application Persistence)]
-        DB[(SQLite<br/>users / reports / products / nodes / factory_profiles)]
-        AUTH --> PERSIST
-        CALC --> PERSIST
-        PROD --> PERSIST
-        REP --> PERSIST
-        VER --> PERSIST
-        PERSIST --> DB
+What makes GreenGate different is the sequence of verification logic. Existing calculators mostly assume the data is valid. GreenGate challenges that assumption first.
 
-        %% -------- External Integrations --------
-        subgraph EXT[External Integrations]
-            direction TB
-            SEARCH[Web Intelligence Stack]
-            CEREBRAS[(Cerebras API)]
-            OLLAMA[(Local Ollama)]
-            EXA[(Exa Search)]
-            TAVILY[(Tavily Search)]
-            FIRE[(Firecrawl)]
-            SC[(Polygon Amoy<br/>CarbonReportRegistry)]
-        end
+> GreenGate is not designed to only answer: “How much carbon?”
+>
+> It is designed to answer: “Should this carbon data be trusted at all?”
 
-        AI --> CEREBRAS
-        AI --> OLLAMA
+---
 
-        DISC --> SEARCH
-        FACT --> SEARCH
-        SEARCH --> EXA
-        SEARCH --> TAVILY
-        SEARCH --> FIRE
+##  How It Works
 
-        CHAIN --> SC
-        VER --> SC
+### 1. Multi-variable consistency checks
 
-        %% -------- Styling --------
-        classDef user fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px;
-        classDef frontend fill:#dbeafe,stroke:#2563eb,color:#1e3a8a,stroke-width:1.5px;
-        classDef api fill:#f3e8ff,stroke:#7e22ce,color:#581c87,stroke-width:1.2px;
-        classDef core fill:#ecfeff,stroke:#0891b2,color:#164e63,stroke-width:1.2px;
-        classDef store fill:#fff7ed,stroke:#ea580c,color:#7c2d12,stroke-width:1.2px;
-        classDef ext fill:#f5f3ff,stroke:#6d28d9,color:#4c1d95,stroke-width:1.2px;
+GreenGate compares electricity, production, and fuel inputs against each other. If a factory claims unusually low energy use for unusually high output, the system flags the mismatch.
 
-        class U,VU user;
-        class FE frontend;
-        class AUTH,CALC,PROD,REP,VER api;
-        class ENG,AI,DISC,FACT,AGG,OPT,CHAIN core;
-        class PERSIST,DB store;
-        class SEARCH,CEREBRAS,OLLAMA,EXA,TAVILY,FIRE,SC ext;
+This layer catches human error, unit mistakes, and obviously contradictory submissions early.
+
+### 2. Physical / process constraint validation
+
+The engine checks whether values are physically plausible for the process, scale, and operating context. Inputs that fall outside reasonable industrial bounds are downgraded in trust.
+
+This prevents impossible or highly suspicious data from being treated as reliable evidence.
+
+### 3. Behavioral anomaly detection
+
+GreenGate looks for patterns that do not fit the historical or operational behavior of the site. Sudden spikes, sharp reversals, or unstable reporting trends are treated as risk signals.
+
+This helps detect manipulation, inconsistent manual entry, and data drift.
+
+### 4. Evidence-based verification
+
+When confidence is low, the system asks for support: PDFs, invoices, logs, meter records, or other proof artifacts.
+
+This creates a practical trust workflow instead of forcing users to defend weak data with assumptions.
+
+---
+
+##  Features
+
+| Feature | What it does |
+|---|---|
+| Data validation engine | Screens industrial inputs before they are used in compliance reporting |
+| Reliability score | Produces a trust score for each submission |
+| Anomaly detection | Flags suspicious patterns and outliers |
+| Benchmark comparison | Compares reported intensity against sector expectations |
+| Evidence-based scoring | Strengthens low-confidence data with supporting documents |
+| CBAM-oriented workflow | Focuses on export risk, auditability, and reporting quality |
+| Public verification | Enables external verification of trusted outputs |
+| Optional blockchain anchoring | Preserves report integrity for immutable certification |
+
+---
+
+##  Demo Flow
+
+1. The user enters industrial data such as electricity, production volume, and fuel usage.
+2. GreenGate validates the submission across multiple trust layers.
+3. The engine generates a reliability score, risk flags, and an explanation of what failed or passed.
+4. If confidence is weak, the system requests evidence before certification.
+5. The user receives a compliance-oriented trust summary instead of a blind emission number.
+
+---
+
+##  Screenshots
+
+![Input Screen](./assets/input.png)
+![Validation Result](./assets/result.png)
+![Trust Score](./assets/trust-score.png)
+
+---
+
+##  Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React + Vite + TailwindCSS |
+| Backend | FastAPI + SQLAlchemy + SQLite |
+| Logic Layer | Python validation engine + benchmark rules + anomaly scoring |
+| Optional Verification | Polygon / Hardhat / web3.py |
+| AI Support | Cerebras / local fallback services |
+
+**Badges**
+
+[![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)]()
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)]()
+[![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)]()
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)]()
+[![Solidity](https://img.shields.io/badge/Solidity-363636?style=flat-square&logo=solidity&logoColor=white)]()
+
+---
+
+##  Example Output
+
+```json
+{
+  "score": 82,
+  "risk": "medium",
+  "flags": [
+    "electricity-use inconsistent with output",
+    "diesel intensity above expected range",
+    "supporting evidence recommended"
+  ],
+  "explanation": "Submission is partially credible but requires evidence before certification. The data is internally inconsistent and exceeds expected behavioral thresholds for the declared process."
+}
 ```
 
 ---
 
-## 🌐 API Endpoints
+## 🔍 Competitive Advantage
 
-| Method | Endpoint                          | Auth     | Description                      |
-|--------|-----------------------------------|----------|----------------------------------|
-| POST   | `/auth/register`                  | No       | Register MSME user               |
-| POST   | `/auth/login`                     | No       | Login and get JWT token          |
-| GET    | `/auth/me`                        | JWT      | Get user profile                 |
-| POST   | `/api/company-intelligence`       | JWT      | Discover company profile hints   |
-| POST   | `/api/calculate`                  | JWT      | Calculate carbon emissions       |
-| POST   | `/api/simulate-reduction`         | JWT      | Simulate reduction actions       |
-| GET    | `/api/reports`                    | JWT      | List user's reports              |
-| GET    | `/api/reports/{id}`               | JWT      | Get full report details          |
-| POST   | `/api/reports/{id}/upload-evidence` | JWT    | Upload evidence PDFs             |
-| POST   | `/api/reports/{id}/certify`       | JWT      | Certify report on blockchain     |
-| GET    | `/api/reports/{id}/download`      | JWT      | Download CBAM report as JSON     |
-| POST   | `/api/products/discover`          | JWT      | Discover product supply chain    |
-| POST   | `/api/products/{id}/confirm-supply-chain` | JWT | Confirm/edit discovered graph |
-| GET    | `/api/products/{id}`              | JWT      | Get product detail + graph       |
-| POST   | `/api/products/{id}/analyze-factories` | JWT  | Run per-factory intelligence     |
-| POST   | `/api/products/{id}/aggregate-carbon` | JWT   | Aggregate product-level carbon   |
-| POST   | `/api/products/{id}/optimize`     | JWT      | Simulate supplier replacement    |
-| GET    | `/api/verify/{hash}`              | **No**   | Public certificate verification  |
-| GET    | `/api/health`                     | No       | Health check                     |
+| Category | Carbon Calculators | ESG Tools | GreenGate |
+|---|---|---|---|
+| Primary focus | Emission estimation | Reporting and disclosure | Data trust and validation |
+| Input quality control | Limited | Partial | Strong multi-layer validation |
+| CBAM readiness | Often indirect | Broad | Directly aligned |
+| Evidence handling | Rare | Sometimes | Core workflow |
+| Risk detection | Minimal | Moderate | Built-in anomaly and constraint checks |
+| Output value | A number | A report | A trustworthy reporting decision |
+
+GreenGate is not competing on calculation only. It competes on **confidence, auditability, and compliance readiness**.
 
 ---
 
-## 📁 Project Structure
+##  Future Scope
 
-```
-greengate/
-├── frontend/              # React + Vite
-│   ├── src/
-│   │   ├── pages/         # Home, Dashboard, Calculator, Report, Verify, Product*
-│   │   ├── components/    # Navbar, EmissionForm, ResultCard, etc.
-│   │   ├── hooks/         # useWeb3 (MetaMask)
-│   │   └── utils/         # API client
-│   └── ...
-├── backend/               # FastAPI
-│   ├── routers/           # auth, calculator, reports, verify, products
-│   ├── services/          # emissions, verification, intelligence, optimization, blockchain
-│   ├── data/              # emission factors, benchmarks, verified factories, etc.
-│   └── ...
-└── blockchain/            # Hardhat + Solidity
-    ├── contracts/         # CarbonReportRegistry.sol
-    └── scripts/           # deploy.js
-```
+- ML-based validation models for richer anomaly detection
+- Direct ERP / MES / utility API integrations
+- Blockchain verification for tamper-resistant certification
+- Real-time telemetry validation for live factory data
+- Supplier graph intelligence for broader Scope 3 trust analysis
 
 ---
 
-## 📄 License
+##  Conclusion
 
-MIT License — Built for the GreenGate Hackathon 2026.
+GreenGate is built for a real compliance problem: carbon reporting only works when the underlying data can be trusted.
+
+By validating data before certification, GreenGate helps MSMEs reduce CBAM risk, improve reporting quality, and move from uncertain disclosure to defensible compliance.
+
+**GreenGate turns carbon data into carbon evidence.**

@@ -17,15 +17,27 @@ import ProductNew from './pages/ProductNew';
 import ProductDetail from './pages/ProductDetail';
 import ProductOptimize from './pages/ProductOptimize';
 import VoiceTest from './pages/VoiceTest';
+import LoadingSpinner from './components/LoadingSpinner';
+import { useAuth } from './context/AuthContext';
 
 /**
  * Protected route wrapper — redirects to login if not authenticated.
  */
 function ProtectedRoute() {
-  const token = localStorage.getItem('greengate_token');
-  if (!token) {
+  const { authLoading, isAuthenticated } = useAuth();
+
+  if (authLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-24">
+        <LoadingSpinner message="Checking your session..." />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
   return <Outlet />;
 }
 
@@ -34,7 +46,7 @@ function ProtectedRoute() {
  */
 function AppLayout() {
   return (
-    <div className="min-h-screen bg-surface-50 pt-28">
+    <div className="min-h-screen pt-28">
       <Navbar />
       <Outlet />
     </div>

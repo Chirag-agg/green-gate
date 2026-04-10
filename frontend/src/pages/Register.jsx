@@ -4,9 +4,10 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Leaf, Mail, Lock, Building2, MapPin, Factory, Loader2 } from 'lucide-react';
+import { Mail, Lock, Building2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { registerUser } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const SECTORS = [
   { value: 'steel_bfbof', label: 'Steel (BF-BOF)' },
@@ -37,6 +38,7 @@ export default function Register() {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { refreshSession } = useAuth();
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -53,6 +55,7 @@ export default function Register() {
         user_id: res.data.user_id,
         company_name: res.data.company_name,
       }));
+      await refreshSession();
       toast.success('Account created! Welcome to GreenGate.');
       navigate('/calculator');
     } catch (err) {
@@ -64,25 +67,21 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-green-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg animate-slide-up">
-        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-primary-500/20 mb-4">
-            <Leaf className="w-7 h-7 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">Create Your Account</h2>
-          <p className="text-gray-500 mt-1">Start your CBAM compliance journey</p>
+          <h2 className="text-3xl font-bold text-surface-900">Create Your Account</h2>
+          <p className="text-surface-600 mt-2">Start your CBAM compliance journey</p>
         </div>
 
         {/* Form */}
-        <div className="card p-8">
+        <div className="card p-8 border-2">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Company Name *</label>
                 <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
                   <input
                     className="input-field !pl-10"
                     placeholder="Sharma Steel Works"
@@ -93,9 +92,9 @@ export default function Register() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Email *</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
                   <input
                     type="email"
                     className="input-field !pl-10"
@@ -107,9 +106,9 @@ export default function Register() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Password *</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
                   <input
                     type="password"
                     className="input-field !pl-10"
@@ -122,7 +121,7 @@ export default function Register() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sector</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Sector</label>
                 <select className="input-field" value={formData.sector} onChange={(e) => updateField('sector', e.target.value)}>
                   {SECTORS.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -130,7 +129,7 @@ export default function Register() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">State</label>
                 <select className="input-field" value={formData.state} onChange={(e) => updateField('state', e.target.value)}>
                   {STATES.map((s) => (
                     <option key={s} value={s}>{s}</option>
@@ -138,11 +137,11 @@ export default function Register() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">GSTIN</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">GSTIN</label>
                 <input className="input-field" placeholder="22AAAAA0000A1Z5" value={formData.gstin} onChange={(e) => updateField('gstin', e.target.value)} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">IEC Number</label>
+                <label className="block text-sm font-medium text-surface-700 mb-1">IEC Number</label>
                 <input className="input-field" placeholder="0123456789" value={formData.iec_number} onChange={(e) => updateField('iec_number', e.target.value)} />
               </div>
             </div>
@@ -155,9 +154,9 @@ export default function Register() {
               )}
             </button>
           </form>
-          <p className="text-sm text-gray-500 text-center mt-6">
+          <p className="text-sm text-surface-600 text-center mt-6">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700">
+            <Link to="/login" className="font-semibold text-primary-700 hover:text-primary-800">
               Sign in
             </Link>
           </p>

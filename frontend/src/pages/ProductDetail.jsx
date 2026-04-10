@@ -501,7 +501,7 @@ export default function ProductDetail() {
                                 className="rounded-lg border px-4 py-3 flex items-center gap-3"
                                 style={{ borderColor: riskStyle.border, background: riskStyle.bg }}
                             >
-                                <span className="flex items-center justify-center p-2 rounded-xl bg-white/50">
+                                <span className="flex items-center justify-center p-2 rounded-xl bg-white border border-surface-200">
                                     {carbonReport.excess_emissions > 0 ? <AlertTriangle className="w-8 h-8 text-red-600" /> : <ShieldCheck className="w-8 h-8 text-green-600" />}
                                 </span>
                                 <div>
@@ -620,7 +620,7 @@ export default function ProductDetail() {
 
             {/* ── Attestation Modal ─────────────────────────────────────────── */}
             {attestingNode && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 animate-fade-in">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between p-4 border-b">
                             <div>

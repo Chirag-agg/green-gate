@@ -13,6 +13,27 @@ const deployerPrivateKey =
   process.env.WALLET_PRIVATE_KEY ||
   "";
 
+function resolveAccountPrivateKey(rawKey) {
+  if (!rawKey) return "";
+
+  let key = String(rawKey).trim();
+  if (key.startsWith("0x_")) {
+    key = `0x${key.slice(3)}`;
+  }
+  if (!key.startsWith("0x")) {
+    key = `0x${key}`;
+  }
+
+  const validHexKey = /^0x[0-9a-fA-F]{64}$/.test(key);
+  if (!validHexKey || key === "0x_your_wallet_private_key") {
+    console.warn("[hardhat] DEPLOYER_PRIVATE_KEY is missing or invalid. Network 'amoy' will use no accounts.");
+    return "";
+  }
+  return key;
+}
+
+const normalizedDeployerPrivateKey = resolveAccountPrivateKey(deployerPrivateKey);
+
 /** @type import('hardhat/config').HardhatUserConfig */
 const config = {
   solidity: {
@@ -29,8 +50,8 @@ const config = {
       url: process.env.POLYGON_RPC_URL || "https://rpc-amoy.polygon.technology",
       chainId: 80002,
       accounts:
-        deployerPrivateKey && deployerPrivateKey !== "0x_your_wallet_private_key"
-          ? [deployerPrivateKey]
+        normalizedDeployerPrivateKey
+          ? [normalizedDeployerPrivateKey]
           : [],
     },
   },

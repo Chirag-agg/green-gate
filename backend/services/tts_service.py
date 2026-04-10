@@ -5,6 +5,9 @@ from __future__ import annotations
 import logging
 import os
 import re
+import math
+import struct
+import wave
 import uuid
 from pathlib import Path
 from typing import Any
@@ -80,6 +83,31 @@ class CoquiTTSService:
         logger.info("gTTS file generated: %s", mp3_path)
         return str(mp3_path)
 
+    @staticmethod
+    def _write_placeholder_wav(output_path: Path, text: str) -> str:
+        sample_rate = 22050
+        duration_seconds = 1.2
+        total_samples = int(sample_rate * duration_seconds)
+        base_frequency = 220 + (abs(hash(text)) % 220)
+        amplitude = 0.18
+
+        with wave.open(str(output_path), "w") as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(sample_rate)
+
+            frames = bytearray()
+            for index in range(total_samples):
+                harmonic = 1 + ((index // (sample_rate // 6)) % 3)
+                frequency = base_frequency * harmonic
+                sample = int(32767 * amplitude * math.sin(2 * math.pi * frequency * index / sample_rate))
+                frames.extend(struct.pack("<h", sample))
+
+            wav_file.writeframes(bytes(frames))
+
+        logger.warning("Using placeholder WAV fallback: %s", output_path)
+        return str(output_path)
+
     def synthesize_to_file(
         self,
         text: str,
@@ -90,9 +118,6 @@ class CoquiTTSService:
         clean_text = " ".join(str(text or "").split())
         if not clean_text:
             raise ValueError("TTS input text is empty.")
-
-        model_name = self._select_model_name(clean_text, language)
-        model = self._load(model_name)
 
         if output_filename:
             filename = output_filename if output_filename.lower().endswith(".wav") else f"{output_filename}.wav"
@@ -112,13 +137,19 @@ class CoquiTTSService:
             except Exception as exc:
                 logger.warning("gTTS synthesis failed (%s). Falling back to Coqui.", exc)
 
+        model_name = self._select_model_name(clean_text, language)
         try:
-            model.tts_to_file(text=clean_text, file_path=str(output_path))
-        except TypeError:
+            # Only load Coqui when we actually need it.
+            # This avoids a hard failure on environments that do not have TTS models installed.
+            model = self._load(model_name)
             model.tts_to_file(text=clean_text, file_path=str(output_path))
         except Exception as exc:
             logger.warning("Primary TTS synthesis failed (%s). Trying English fallback model.", exc)
-            fallback_model = self._load(self.model_name_en)
-            fallback_model.tts_to_file(text=clean_text, file_path=str(output_path))
+            try:
+                fallback_model = self._load(self.model_name_en)
+                fallback_model.tts_to_file(text=clean_text, file_path=str(output_path))
+            except Exception as fallback_exc:
+                logger.warning("Coqui fallback failed (%s). Using local placeholder audio.", fallback_exc)
+                return self._write_placeholder_wav(output_path, clean_text)
         logger.info("TTS file generated: %s", output_path)
         return str(output_path)

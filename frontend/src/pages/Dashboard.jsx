@@ -8,13 +8,13 @@ import { FileText, ShieldCheck, Activity, DollarSign, Plus, ChevronRight, Folder
 import { getReports } from '../utils/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ResultCard from '../components/ResultCard';
+import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  const user = JSON.parse(localStorage.getItem('greengate_user') || '{}');
+  const { user } = useAuth();
 
   useEffect(() => {
     loadReports();
@@ -103,7 +103,7 @@ export default function Dashboard() {
         </div>
 
         {reports.length === 0 ? (
-          <div className="text-center py-24 px-4 bg-white/50">
+          <div className="text-center py-24 px-4 bg-white">
             <div className="w-24 h-24 bg-surface-100 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
               <FileText className="w-12 h-12 text-surface-400" />
             </div>
@@ -117,7 +117,7 @@ export default function Dashboard() {
             </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto bg-white/50 backdrop-blur-sm">
+          <div className="overflow-x-auto bg-white">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-50/80 border-b-2 border-surface-200">

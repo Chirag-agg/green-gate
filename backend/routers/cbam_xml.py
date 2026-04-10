@@ -6,10 +6,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from models import User
+from routers.auth import get_current_user
 from services.cbam_xml_service import generate_cbam_xml, save_cbam_xml
 
 router = APIRouter(tags=["CBAM XML"])
@@ -71,8 +73,12 @@ class CBAMEUExportRequest(BaseModel):
 
 
 @router.post("/export-xml")
-def export_xml(payload: CBAMXMLExportRequest) -> Any:
+def export_xml(
+    payload: CBAMXMLExportRequest,
+    current_user: User = Depends(get_current_user),
+) -> Any:
     """Export EU-style CBAM XML either as inline XML text or downloadable XML file."""
+    _ = current_user
     try:
         data = payload.model_dump()
         if not data.get("generated_at"):
@@ -114,8 +120,12 @@ def export_xml(payload: CBAMXMLExportRequest) -> Any:
 
 
 @router.post("/export-cbam-xml")
-def export_cbam_xml(payload: CBAMEUExportRequest) -> Any:
+def export_cbam_xml(
+    payload: CBAMEUExportRequest,
+    current_user: User = Depends(get_current_user),
+) -> Any:
     """Export EU CBAM XML as inline text or downloadable XML file."""
+    _ = current_user
     try:
         data = payload.model_dump()
         if not data.get("generated_at"):

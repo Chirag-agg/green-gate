@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import logging
+import shutil
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from models import User
+from routers.auth import get_current_user
 from services.cerebras_service import CerebrasService
 from services.state_manager import StateManager, VoiceSession
 from services.tts_service import CoquiTTSService
@@ -261,10 +264,20 @@ async def _chat_logic(session_id: str | None, transcript: str) -> dict[str, Any]
 def voice_health() -> dict[str, Any]:
     import os
 
+    ffmpeg_available = bool(shutil.which("ffmpeg"))
+    if not ffmpeg_available:
+        try:
+            import imageio_ffmpeg  # type: ignore
+
+            ffmpeg_available = bool(imageio_ffmpeg.get_ffmpeg_exe())
+        except Exception:
+            ffmpeg_available = False
+
     return {
         "status": "ok",
         "services": {
             "whisper": True,
+            "ffmpeg": ffmpeg_available,
             "cerebras": bool(os.getenv("CEREBRAS_API_KEY", "").strip()),
             "tts": True,
         },
@@ -276,7 +289,9 @@ def voice_health() -> dict[str, Any]:
 async def chat_voice(
     audio: UploadFile = File(...),
     session_id: str | None = Form(None),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
+    _ = current_user
     try:
         transcript, _language = await _transcribe(audio)
         payload = await _chat_logic(session_id, transcript)
@@ -294,13 +309,16 @@ async def chat_voice(
 async def process_voice(
     audio: UploadFile = File(...),
     session_id: str | None = Form(None),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """Backward-compatible wrapper for the stateful chatbot endpoint."""
+    _ = current_user
     return await chat_voice(audio=audio, session_id=session_id)
 
 
 @router.post("/tts")
-def tts(payload: TTSRequest):
+def tts(payload: TTSRequest, current_user: User = Depends(get_current_user)):
+    _ = current_user
     try:
         output_path = CoquiTTSService().synthesize_to_file(payload.text, payload.file_name, payload.language)
         filename = Path(output_path).name
@@ -315,7 +333,11 @@ def tts(payload: TTSRequest):
 
 
 @router.post("/transcribe")
-async def transcribe(audio: UploadFile = File(...)) -> dict[str, str]:
+async def transcribe(
+    audio: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, str]:
+    _ = current_user
     try:
         result = await WhisperService().transcribe_upload(audio)
         return {"transcript": result["transcript"], "language": result["language"]}

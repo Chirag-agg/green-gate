@@ -106,15 +106,15 @@ export default function Verify() {
                   <h2 className="text-2xl font-bold text-green-800">Valid Certificate</h2>
                 </div>
                 <div className="space-y-4 max-w-md mx-auto">
-                  <div className="bg-white/70 rounded-xl p-4">
+                  <div className="bg-white rounded-xl p-4 border border-green-100">
                     <p className="text-xs text-gray-500 font-medium mb-1">Report ID</p>
                     <p className="text-lg font-bold text-gray-900 font-mono">{result.report_id}</p>
                   </div>
-                  <div className="bg-white/70 rounded-xl p-4">
+                  <div className="bg-white rounded-xl p-4 border border-green-100">
                     <p className="text-xs text-gray-500 font-medium mb-1">Certification Date</p>
                     <p className="text-lg font-bold text-gray-900">{result.timestamp_readable}</p>
                   </div>
-                  <div className="bg-white/70 rounded-xl p-4">
+                  <div className="bg-white rounded-xl p-4 border border-green-100">
                     <p className="text-xs text-gray-500 font-medium mb-1">Report Hash</p>
                     <p className="text-xs font-mono text-gray-700 break-all">{hash}</p>
                   </div>

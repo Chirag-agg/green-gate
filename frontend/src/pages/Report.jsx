@@ -49,7 +49,11 @@ export default function Report() {
     setCertifying(true);
     try {
       const res = await certifyReport(reportId);
-      toast.success('Report certified on blockchain!');
+      if (res.data?.verified) {
+        toast.success('Report certified on blockchain!');
+      } else {
+        toast.error(res.data?.note || 'Certification unavailable. Blockchain verification failed.');
+      }
       // Reload to get updated data
       await loadReport();
     } catch (err) {

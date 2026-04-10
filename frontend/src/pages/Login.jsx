@@ -4,9 +4,10 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Leaf, Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginUser, registerUser } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const DEMO_EMAIL = import.meta.env.VITE_DEMO_EMAIL || 'demo@greengate.app';
 const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD || 'Demo@12345';
@@ -17,6 +18,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { refreshSession } = useAuth();
 
   const saveSession = (authData) => {
     localStorage.setItem('greengate_token', authData.access_token);
@@ -33,6 +35,7 @@ export default function Login() {
     try {
       const res = await loginUser({ email, password });
       saveSession(res.data);
+      await refreshSession();
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch (err) {
@@ -59,6 +62,7 @@ export default function Login() {
         password: DEMO_PASSWORD,
       });
       saveSession(loginRes.data);
+      await refreshSession();
       toast.success('Signed in with demo account');
       navigate('/dashboard');
       return;
@@ -78,6 +82,7 @@ export default function Login() {
         company_name: DEMO_COMPANY,
       });
       saveSession(registerRes.data);
+      await refreshSession();
       toast.success('Demo account created and signed in');
       navigate('/dashboard');
     } catch (registerErr) {
@@ -89,21 +94,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-green-50 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md animate-slide-up">
-        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-primary-500/20 mb-4">
-            <Leaf className="w-7 h-7 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
-          <p className="text-gray-500 mt-1">Sign in to your GreenGate account</p>
+          <h2 className="text-3xl font-bold text-surface-900">Welcome Back</h2>
+          <p className="text-surface-600 mt-2">Sign in to your GreenGate account</p>
         </div>
 
         {/* Form */}
-        <div className="card p-8">
+        <div className="card p-8 border-2">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="rounded-xl border border-primary-200 bg-primary-50/50 p-3 text-sm text-primary-800">
+            <div className="rounded-xl border border-primary-200 bg-primary-50 p-3 text-sm text-primary-900">
               <p className="font-semibold">Demo access</p>
               <p className="mt-1 break-all">{DEMO_EMAIL}</p>
               <div className="mt-3 flex gap-2">
@@ -127,9 +128,9 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
                 <input
                   type="email"
                   className="input-field !pl-10"
@@ -141,9 +142,9 @@ export default function Login() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-surface-700 mb-1">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-surface-400" />
                 <input
                   type="password"
                   className="input-field !pl-10"
@@ -162,9 +163,9 @@ export default function Login() {
               )}
             </button>
           </form>
-          <p className="text-sm text-gray-500 text-center mt-6">
+          <p className="text-sm text-surface-600 text-center mt-6">
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-700">
+            <Link to="/register" className="font-semibold text-primary-700 hover:text-primary-800">
               Register here
             </Link>
           </p>

@@ -34,7 +34,7 @@ export default function BlockchainBadge({ certified, txHash, blockNumber, polygo
 
       <div className="space-y-3">
         {txHash && (
-          <div className="flex items-center justify-between bg-white/70 rounded-lg px-3 py-2">
+          <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-surface-200">
             <div>
               <p className="text-xs text-gray-500 font-medium">Transaction Hash</p>
               <p className="text-xs font-mono text-gray-700 truncate max-w-[250px]">{txHash}</p>
@@ -52,14 +52,14 @@ export default function BlockchainBadge({ certified, txHash, blockNumber, polygo
         )}
 
         {blockNumber && (
-          <div className="bg-white/70 rounded-lg px-3 py-2">
+          <div className="bg-white rounded-lg px-3 py-2 border border-surface-200">
             <p className="text-xs text-gray-500 font-medium">Block Number</p>
             <p className="text-sm font-semibold text-gray-700">{blockNumber.toLocaleString()}</p>
           </div>
         )}
 
         {reportHash && (
-          <div className="bg-white/70 rounded-lg px-3 py-2">
+          <div className="bg-white rounded-lg px-3 py-2 border border-surface-200">
             <p className="text-xs text-gray-500 font-medium">Report Hash</p>
             <p className="text-xs font-mono text-gray-700 truncate">{reportHash}</p>
             <p className={`text-xs mt-1 font-semibold ${hashVerified ? 'text-green-700' : 'text-red-600'}`}>
@@ -69,7 +69,7 @@ export default function BlockchainBadge({ certified, txHash, blockNumber, polygo
         )}
 
         {verifiedAt && (
-          <div className="bg-white/70 rounded-lg px-3 py-2">
+          <div className="bg-white rounded-lg px-3 py-2 border border-surface-200">
             <p className="text-xs text-gray-500 font-medium">Verification Timestamp</p>
             <p className="text-xs text-gray-700">{new Date(verifiedAt).toLocaleString()}</p>
           </div>

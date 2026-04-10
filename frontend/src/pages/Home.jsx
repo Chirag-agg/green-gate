@@ -3,26 +3,22 @@
  */
 
 import { Link } from 'react-router-dom';
-import { ArrowRight, Cpu, ShieldCheck, FileCheck2, Leaf, TrendingUp, Globe, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Cpu, ShieldCheck, FileCheck2, Globe, CheckCircle2 } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-surface-50 selection:bg-primary-100">
+    <div className="min-h-screen selection:bg-primary-100">
       {/* Spacer to account for the new floating navbar */}
       <div className="h-28" />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden mb-16">
-        {/* Simplified, elegant background pattern without neon */}
-        <div className="absolute inset-0 bg-surface-50 -z-10" />
-        <div className="absolute -top-20 -right-20 w-[600px] h-[600px] bg-primary-100/40 rounded-full blur-[100px] -z-10 animate-float" />
-        <div className="absolute top-40 -left-20 w-[500px] h-[500px] bg-surface-200/40 rounded-full blur-[80px] -z-10" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-surface-50 to-transparent" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <div className="text-center max-w-5xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-white border-2 border-primary-100 rounded-full px-5 py-2 mb-8 animate-fade-in shadow-sm">
-              <Leaf className="w-5 h-5 text-primary-700" />
-              <span className="text-base font-bold text-primary-800 tracking-wide uppercase">AI Data + Blockchain Truth</span>
+          <div className="text-center max-w-5xl mx-auto rounded-3xl border border-surface-200 bg-white p-8 sm:p-14 shadow-md">
+            <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-5 py-2 mb-8 animate-fade-in shadow-sm">
+              <span className="text-sm font-bold text-primary-800 tracking-wide uppercase">Built for Exporters, Not Engineers</span>
             </div>
 
             <h1 className="text-5xl sm:text-7xl font-extrabold text-surface-900 leading-[1.1] mb-8 animate-slide-up tracking-tight">
@@ -61,8 +57,8 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Feature 1 */}
-          <div className="card-glass p-10 group hover:-translate-y-2 transition-transform duration-300">
-            <div className="w-20 h-20 rounded-[2rem] bg-surface-100 flex items-center justify-center mb-8 shadow-inner group-hover:bg-primary-50 transition-colors">
+          <div className="card p-10 group hover:-translate-y-1 transition-transform duration-300">
+            <div className="w-20 h-20 rounded-2xl bg-surface-100 flex items-center justify-center mb-8 border border-surface-200 group-hover:bg-primary-50 transition-colors">
               <Cpu className="w-10 h-10 text-primary-700" />
             </div>
             <h3 className="text-2xl font-bold text-surface-900 mb-4 tracking-tight">Easy Calculations</h3>
@@ -80,8 +76,8 @@ export default function Home() {
           </div>
 
           {/* Feature 2 */}
-          <div className="card-glass p-10 group hover:-translate-y-2 transition-transform duration-300">
-            <div className="w-20 h-20 rounded-[2rem] bg-surface-100 flex items-center justify-center mb-8 shadow-inner group-hover:bg-primary-50 transition-colors">
+          <div className="card p-10 group hover:-translate-y-1 transition-transform duration-300">
+            <div className="w-20 h-20 rounded-2xl bg-surface-100 flex items-center justify-center mb-8 border border-surface-200 group-hover:bg-primary-50 transition-colors">
               <ShieldCheck className="w-10 h-10 text-primary-700" />
             </div>
             <h3 className="text-2xl font-bold text-surface-900 mb-4 tracking-tight">Trust & Proof</h3>
@@ -99,8 +95,8 @@ export default function Home() {
           </div>
 
           {/* Feature 3 */}
-          <div className="card-glass p-10 group hover:-translate-y-2 transition-transform duration-300">
-            <div className="w-20 h-20 rounded-[2rem] bg-surface-100 flex items-center justify-center mb-8 shadow-inner group-hover:bg-primary-50 transition-colors">
+          <div className="card p-10 group hover:-translate-y-1 transition-transform duration-300">
+            <div className="w-20 h-20 rounded-2xl bg-surface-100 flex items-center justify-center mb-8 border border-surface-200 group-hover:bg-primary-50 transition-colors">
               <FileCheck2 className="w-10 h-10 text-primary-700" />
             </div>
             <h3 className="text-2xl font-bold text-surface-900 mb-4 tracking-tight">Ready Documents</h3>
@@ -121,11 +117,11 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="py-24 mx-4 sm:mx-8 mb-12">
-        <div className="max-w-6xl mx-auto rounded-[3rem] overflow-hidden relative shadow-2xl shadow-primary-900/10">
+        <div className="max-w-6xl mx-auto rounded-3xl overflow-hidden relative shadow-xl border border-surface-300">
           <div className="absolute inset-0 bg-surface-900" />
-          <div className="absolute inset-0 bg-primary-900/20" />
+          <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(102,109,60,0.16),rgba(47,42,36,0.3))]" />
           <div className="relative px-6 py-20 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-8">
+            <div className="w-16 h-16 bg-white/10 border border-white/20 rounded-2xl flex items-center justify-center mb-8">
               <Globe className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-4xl sm:text-5xl font-extrabold text-white mb-6 tracking-tight max-w-3xl">
@@ -143,12 +139,7 @@ export default function Home() {
       <footer className="bg-surface-100 py-12 border-t border-surface-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-700 rounded-xl flex items-center justify-center">
-                <Leaf className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-surface-900">GreenGate</span>
-            </div>
+            <p className="text-xl font-bold text-surface-900">GreenGate</p>
             <p className="text-base font-medium text-surface-500">
               © {new Date().getFullYear()} GreenGate Technologies
             </p>

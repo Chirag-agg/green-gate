@@ -4,20 +4,19 @@
 
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Leaf, Menu, X, LogOut, LayoutDashboard, Calculator, ShieldCheck, Network, Volume2, Mic } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Calculator, ShieldCheck, Network, Volume2, Mic } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const token = localStorage.getItem('greengate_token');
-  const user = JSON.parse(localStorage.getItem('greengate_user') || '{}');
-  const isLoggedIn = !!token;
+  const { isAuthenticated, user, logout } = useAuth();
+  const isLoggedIn = isAuthenticated;
 
   const handleLogout = () => {
-    localStorage.removeItem('greengate_token');
-    localStorage.removeItem('greengate_user');
+    logout();
     navigate('/');
   };
 
@@ -29,12 +28,12 @@ export default function Navbar() {
   };
 
   return (
-    <div className="fixed top-0 inset-x-0 z-50 flex justify-center px-4 pt-6 pb-2 pointer-events-none">
-      <nav className="w-full max-w-7xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-xl shadow-surface-200/50 rounded-[2rem] pointer-events-auto transition-all duration-300">
+    <div className="fixed top-0 inset-x-0 z-50 flex justify-center px-4 pt-4 pb-2 pointer-events-none">
+      <nav className="w-full max-w-7xl bg-white border border-surface-200 shadow-md rounded-2xl pointer-events-auto transition-all duration-200">
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-3 group">
-              <span className="text-2xl font-bold text-surface-900 tracking-tight">GreenGate</span>
+              <span className="text-2xl font-semibold text-surface-900 tracking-tight">GreenGate</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -52,7 +51,7 @@ export default function Navbar() {
                   <Link
                     to="/dashboard"
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-300 ${isActive('/dashboard')
-                      ? 'bg-primary-50 text-primary-800 shadow-sm'
+                        ? 'bg-primary-100 text-primary-900 shadow-sm'
                       : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
                       }`}
                   >
@@ -62,7 +61,7 @@ export default function Navbar() {
                   <Link
                     to="/calculator"
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-300 ${isActive('/calculator')
-                      ? 'bg-primary-50 text-primary-800 shadow-sm'
+                        ? 'bg-primary-100 text-primary-900 shadow-sm'
                       : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
                       }`}
                   >
@@ -72,7 +71,7 @@ export default function Navbar() {
                   <Link
                     to="/products/new"
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-300 ${isActive('/products/new')
-                      ? 'bg-primary-50 text-primary-800 shadow-sm'
+                        ? 'bg-primary-100 text-primary-900 shadow-sm'
                       : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
                       }`}
                   >
@@ -82,7 +81,7 @@ export default function Navbar() {
                   <Link
                     to="/verify"
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-300 ${isActive('/verify')
-                      ? 'bg-primary-50 text-primary-800 shadow-sm'
+                        ? 'bg-primary-100 text-primary-900 shadow-sm'
                       : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
                       }`}
                   >
@@ -92,7 +91,7 @@ export default function Navbar() {
                   <Link
                     to="/voice-test"
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-300 ${isActive('/voice-test')
-                      ? 'bg-primary-50 text-primary-800 shadow-sm'
+                        ? 'bg-primary-100 text-primary-900 shadow-sm'
                       : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
                       }`}
                   >
@@ -101,7 +100,7 @@ export default function Navbar() {
                   </Link>
                   <div className="w-px h-8 bg-surface-200 mx-2" />
                   <span className="text-base font-medium text-surface-600 mr-2 bg-surface-50 px-4 py-2 rounded-xl">
-                    {user.company_name || user.email}
+                    {user?.company_name || user?.email || 'User'}
                   </span>
                   <button
                     onClick={handleLogout}
@@ -152,7 +151,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {mobileOpen && (
-          <div className="lg:hidden border-t border-surface-100/50 bg-white/50 backdrop-blur-md rounded-b-[2rem] p-4 animate-slide-up">
+          <div className="lg:hidden border-t border-surface-200 bg-surface-50 rounded-b-2xl p-4 animate-slide-up">
             <div className="space-y-2">
               {isLoggedIn ? (
                 <>
