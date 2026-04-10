@@ -4,8 +4,13 @@ Implements rule-based carbon footprint calculation using IPCC/CEA emission facto
 """
 
 import json
+import math
 import os
 from typing import Any
+
+from utils.logger import get_logger
+
+logger = get_logger("emission_engine")
 
 
 class EmissionEngine:
@@ -19,6 +24,25 @@ class EmissionEngine:
         with open(data_path, "r", encoding="utf-8") as f:
             self.factors: dict[str, Any] = json.load(f)
 
+    @staticmethod
+    def _safe_float(value: Any, default: float = 0.0) -> float:
+        """Convert inputs to float safely with fallback defaults."""
+        if value is None or value == "":
+            return default
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return default
+        if math.isnan(parsed) or math.isinf(parsed):
+            return default
+        return parsed
+
+    @staticmethod
+    def _validate_intensity_value(value: float) -> None:
+        """Validate intensity value and raise if invalid."""
+        if not value or math.isnan(value):
+            raise ValueError("Invalid intensity input")
+
     def calculate(self, input_data: dict[str, Any]) -> dict[str, Any]:
         """
         Calculate carbon emissions based on input data.
@@ -29,26 +53,59 @@ class EmissionEngine:
         Returns:
             Dictionary with detailed emission breakdown, CBAM liability, and benchmark comparison.
         """
+        logger.info(
+            "calculation_input_received",
+            {
+                "company_name": str(input_data.get("company_name", "")),
+                "sector": str(input_data.get("sector", "")),
+                "state": str(input_data.get("state", "")),
+            },
+        )
+
         # Extract input values
         state: str = input_data.get("state", "")
         sector: str = input_data.get("sector", "")
-        annual_production_tonnes: float = input_data.get("annual_production_tonnes", 0)
-        eu_export_tonnes: float = input_data.get("eu_export_tonnes", 0)
+        annual_production_tonnes: float = max(
+            self._safe_float(input_data.get("annual_production_tonnes"), 0.0), 0.0
+        )
+        eu_export_tonnes: float = max(
+            self._safe_float(input_data.get("eu_export_tonnes"), 0.0), 0.0
+        )
 
         # Monthly energy inputs
-        electricity_kwh: float = input_data.get("electricity_kwh_per_month", 0)
-        solar_kwh: float = input_data.get("solar_kwh_per_month", 0)
-        coal_kg: float = input_data.get("coal_kg_per_month", 0)
-        natural_gas_m3: float = input_data.get("natural_gas_m3_per_month", 0)
-        diesel_litres: float = input_data.get("diesel_litres_per_month", 0)
-        lpg_litres: float = input_data.get("lpg_litres_per_month", 0)
-        furnace_oil_litres: float = input_data.get("furnace_oil_litres_per_month", 0)
-        biomass_kg: float = input_data.get("biomass_kg_per_month", 0)
+        electricity_kwh: float = max(
+            self._safe_float(input_data.get("electricity_kwh_per_month"), 0.0), 0.0
+        )
+        solar_kwh: float = max(
+            self._safe_float(input_data.get("solar_kwh_per_month"), 0.0), 0.0
+        )
+        coal_kg: float = max(self._safe_float(input_data.get("coal_kg_per_month"), 0.0), 0.0)
+        natural_gas_m3: float = max(
+            self._safe_float(input_data.get("natural_gas_m3_per_month"), 0.0), 0.0
+        )
+        diesel_litres: float = max(
+            self._safe_float(input_data.get("diesel_litres_per_month"), 0.0), 0.0
+        )
+        lpg_litres: float = max(
+            self._safe_float(input_data.get("lpg_litres_per_month"), 0.0), 0.0
+        )
+        furnace_oil_litres: float = max(
+            self._safe_float(input_data.get("furnace_oil_litres_per_month"), 0.0), 0.0
+        )
+        biomass_kg: float = max(self._safe_float(input_data.get("biomass_kg_per_month"), 0.0), 0.0)
 
         # Step 1: Get grid emission factor (state-specific or national average)
         grid_states: dict[str, float] = self.factors["grid_electricity"]["states"]
         national_avg: float = self.factors["grid_electricity"]["national_average"]
         grid_factor: float = grid_states.get(state, national_avg)
+        logger.info(
+            "grid_factor_resolved",
+            {
+                "state": state,
+                "grid_factor_kgco2_per_kwh": grid_factor,
+                "used_national_average": state not in grid_states,
+            },
+        )
 
         # Step 2: Scope 1 — Direct emissions (monthly, then annualize)
         coal_co2_kg_monthly: float = coal_kg * 2.42
@@ -79,10 +136,29 @@ class EmissionEngine:
         scope1_co2_tonnes: float = scope1_co2_kg / 1000
         scope2_co2_tonnes: float = scope2_co2_kg / 1000
 
-        # Step 5: Per-unit emission intensity
-        co2_per_tonne_product: float = 0.0
-        if annual_production_tonnes > 0:
-            co2_per_tonne_product = total_co2_tonnes / annual_production_tonnes
+        # Step 5: Per-unit emission intensity in kgCO2 per unit output.
+        if not total_co2_kg or not annual_production_tonnes:
+            raise ValueError("Missing required inputs")
+
+        if annual_production_tonnes == 0:
+            raise ValueError("Output cannot be zero")
+
+        intensity_value = total_co2_kg / annual_production_tonnes
+        self._validate_intensity_value(intensity_value)
+
+        if intensity_value > 25000:
+            raise ValueError("Calculated intensity is outside realistic environmental range")
+
+        # Inline verification for stored-vs-recalculated consistency.
+        recalculated = total_co2_kg / annual_production_tonnes
+        if math.fabs(recalculated - intensity_value) > 0.01:
+            logger.warn(
+                "intensity_mismatch_detected",
+                {"recalculated": round(recalculated, 6), "stored_value": round(intensity_value, 6)},
+            )
+
+        # Backward-compatible field (tCO2 per tonne product) kept for existing consumers.
+        co2_per_tonne_product = intensity_value / 1000.0
 
         # Step 6: EU export embedded emissions
         eu_embedded_co2_tonnes: float = co2_per_tonne_product * eu_export_tonnes
@@ -114,11 +190,16 @@ class EmissionEngine:
             * 12
         ) / 1000
 
-        return {
+        result = {
             "scope1_co2_tonnes": round(scope1_co2_tonnes, 3),
             "scope2_co2_tonnes": round(scope2_co2_tonnes, 3),
             "total_co2_tonnes": round(total_co2_tonnes, 3),
             "co2_per_tonne_product": round(co2_per_tonne_product, 3),
+            "intensity": {
+                "value": round(intensity_value, 3),
+                "unit": "kgCO2/unit",
+                "valid": True,
+            },
             "eu_embedded_co2_tonnes": round(eu_embedded_co2_tonnes, 3),
             "cbam_liability_eur": round(cbam_liability_eur, 2),
             "cbam_liability_inr": round(cbam_liability_inr, 2),
@@ -132,3 +213,15 @@ class EmissionEngine:
                 "other_co2_tonnes": round(other_co2_tonnes, 3),
             },
         }
+
+        logger.info(
+            "calculation_output_generated",
+            {
+                "total_co2_tonnes": result["total_co2_tonnes"],
+                "co2_per_tonne_product": result["co2_per_tonne_product"],
+                "intensity_kgco2_per_unit": result["intensity"]["value"],
+                "cbam_liability_eur": result["cbam_liability_eur"],
+            },
+        )
+
+        return result

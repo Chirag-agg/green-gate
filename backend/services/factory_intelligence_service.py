@@ -40,7 +40,7 @@ class FactoryIntelligenceService:
         self.tavily_api_key = os.getenv("TAVILY_API_KEY", "").strip()
         self.firecrawl_api_key = os.getenv("FIRECRAWL_API_KEY", "").strip()
         self.cerebras_api_key = os.getenv("CEREBRAS_API_KEY", "").strip()
-        self.cerebras_model = os.getenv("CEREBRAS_MODEL", "llama-3.3-70b")
+        self.cerebras_model = os.getenv("CEREBRAS_MODEL", "qwen-3-235b-a22b-instruct-2507")
         self.cerebras_base_url = os.getenv("CEREBRAS_BASE_URL", "https://api.cerebras.ai/v1")
 
         self.emission_engine = EmissionEngine()

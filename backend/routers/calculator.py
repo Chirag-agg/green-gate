@@ -27,11 +27,15 @@ from services.scope3_engine import Scope3Engine
 from services.confidence_engine import ConfidenceEngine
 from services.reduction_simulator import ReductionSimulator
 from services.cbam_engine import CbamEngine
+from services.cbam_report import generate_cbam_report
 from services.company_intelligence_service import CompanyIntelligenceService
 from services.digital_twin_service import DigitalTwinService
 from services.rate_limiter import rate_limit
+from services.blockchain import BlockchainService
+from utils.logger import get_logger
 
 router = APIRouter(prefix="/api", tags=["Calculator"])
+logger = get_logger("calculator_router")
 
 
 # ──── Pydantic Schemas ────
@@ -109,6 +113,7 @@ class CalculationResponse(BaseModel):
 class CalculateFullResponse(BaseModel):
     report_id: str
     calculation_result: CalculationResponse
+    benchmark_comparison: dict[str, object]
     recommendations: list
     expected_energy: float
     deviation_ratio: float
@@ -126,6 +131,12 @@ class CalculateFullResponse(BaseModel):
     requires_evidence: bool
     verification_notes: Optional[str] = None
     warnings: list[str]
+    verified: bool = False
+    hash: Optional[str] = None
+    blockchain_note: Optional[str] = None
+    tx_hash: Optional[str] = None
+    blockchain_timestamp: Optional[str] = None
+    eu_report: Optional[dict[str, object]] = None
 
 
 class ReductionSimulationRequest(BaseModel):
@@ -213,6 +224,18 @@ def _calculate_twin_consistency_score(deviation_ratio: float) -> float:
     return 0.6
 
 
+def _build_report_hash_payload(report: CarbonReport) -> dict[str, object]:
+    """Build deterministic hash payload for report trust verification."""
+    return {
+        "report_id": report.report_id,
+        "user_id": report.user_id,
+        "timestamp": report.created_at.isoformat() if report.created_at else "",
+        "total_co2_tonnes": float(report.total_co2_tonnes or 0.0),
+        "co2_per_tonne_product": float(report.co2_per_tonne_product or 0.0),
+        "cbam_liability_eur": float(report.cbam_liability_eur or 0.0),
+    }
+
+
 # ──── Endpoints ────
 
 
@@ -267,6 +290,42 @@ async def calculate_emissions(
     Saves the report to the database (as draft, not yet blockchain-certified).
     """
     input_dict = data.model_dump()
+    profile_location = (current_user.location or data.region or data.state or "India")
+    profile_industry = (current_user.industry or data.sector or "general")
+    profile_scale = (current_user.scale or "small")
+    profile_energy_source = (current_user.energy_source or "grid")
+    profile_production_type = (current_user.production_type or "mixed")
+    exports_to_eu = bool(current_user.exports_to_eu or data.eu_export_tonnes > 0)
+
+    input_dict.update(
+        {
+            "industry": profile_industry,
+            "scale": profile_scale,
+            "location": profile_location,
+            "energy_source": profile_energy_source,
+            "production_type": profile_production_type,
+            "exports_to_eu": exports_to_eu,
+        }
+    )
+
+    inferred_energy_source = profile_energy_source
+    if not inferred_energy_source or inferred_energy_source == "grid":
+        if float(data.coal_kg_per_month or 0.0) > 0:
+            inferred_energy_source = "coal"
+        elif float(data.natural_gas_m3_per_month or 0.0) > 0:
+            inferred_energy_source = "gas"
+        elif float(data.solar_kwh_per_month or 0.0) > 0 and float(data.electricity_kwh_per_month or 0.0) <= 0:
+            inferred_energy_source = "solar"
+        else:
+            inferred_energy_source = "electric"
+    logger.info(
+        "calculate_started",
+        {
+            "company_name": data.company_name,
+            "sector": data.sector,
+            "state": data.state,
+        },
+    )
 
     # Step 1: Industrial twin benchmark
     inferred_product_type, inferred_machinery = _infer_twin_profile(data.sector)
@@ -369,8 +428,28 @@ async def calculate_emissions(
     engine = EmissionEngine()
     try:
         calc_result = engine.calculate(input_dict)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Calculation validation error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Calculation error: {str(e)}")
+
+    total_emissions_tonnes = float(calc_result.get("total_co2_tonnes", 0.0) or 0.0)
+    intensity_payload = calc_result.get("intensity", {}) or {}
+    intensity_value = float(intensity_payload.get("value", 0.0) or 0.0)
+    if intensity_value <= 0 and float(data.annual_production_tonnes) > 0:
+        intensity_value = (total_emissions_tonnes * 1000.0) / float(data.annual_production_tonnes)
+
+    benchmark_comparison = benchmark_service.compare_intensity(
+        industry=profile_industry,
+        annual_production_tonnes=float(data.annual_production_tonnes),
+        observed_intensity=intensity_value,
+        region=profile_location,
+        db=db,
+        machinery=machinery,
+        energy_source=inferred_energy_source,
+        scale=profile_scale,
+    )
+    calc_result["vs_benchmark_pct"] = float(benchmark_comparison.get("vs_benchmark_pct", 0.0) or 0.0)
 
     # Step 9: Digital twin estimator and deviation analysis
     digital_twin_service = DigitalTwinService()
@@ -411,6 +490,14 @@ async def calculate_emissions(
     if requires_evidence:
         warnings.append("Supporting evidence is required due to low credibility indicators.")
 
+    consistency_result = {
+        "is_consistent": True,
+        "flags": [],
+    }
+    consistency_flags = []
+    if consistency_flags:
+        warnings.extend(consistency_flags)
+
     # Step 11: AI recommendations
     try:
         recommendations = await get_recommendations(input_dict, calc_result)
@@ -420,9 +507,38 @@ async def calculate_emissions(
     # Generate report ID
     report_id = _generate_report_id()
 
+    eu_report = generate_cbam_report(
+        input_data=input_dict,
+        calculation_result={
+            **calc_result,
+            "benchmark_comparison": benchmark_comparison,
+            "user_profile": {
+                "industry": profile_industry,
+                "scale": profile_scale,
+                "location": profile_location,
+                "machinery": machinery,
+                "energy_source": inferred_energy_source,
+            },
+            "cbam_status": exports_to_eu,
+        },
+        recommendations=recommendations,
+        report_id=report_id,
+        tx_hash=None,
+        report_hash=None,
+    )
+
     # Step 12: Save CarbonReport
     full_output_with_scope3 = {
         **calc_result,
+        "benchmark_comparison": benchmark_comparison,
+        "user_profile": {
+            "industry": profile_industry,
+            "scale": profile_scale,
+            "location": profile_location,
+            "machinery": machinery,
+            "energy_source": inferred_energy_source,
+        },
+        "cbam_status": exports_to_eu,
         "scope3_emissions": float(scope3_result["scope3_emissions"]),
         "scope3_breakdown": scope3_result["breakdown"],
         "estimated_emissions": estimated_emissions,
@@ -432,6 +548,11 @@ async def calculate_emissions(
         "requires_evidence": requires_evidence,
         "verification_notes": verification_notes,
         "warnings": warnings,
+        "consistency": {
+            "is_consistent": bool(consistency_result.get("is_consistent", True)),
+            "flags": consistency_flags,
+        },
+        "eu_report": eu_report,
     }
 
     report = CarbonReport(
@@ -474,9 +595,70 @@ async def calculate_emissions(
     db.commit()
     db.refresh(report)
 
+    verified = False
+    report_hash: Optional[str] = None
+    tx_hash: Optional[str] = None
+    blockchain_note: Optional[str] = None
+    blockchain_timestamp: Optional[str] = None
+
+    report_hash_payload = _build_report_hash_payload(report)
+    report_hash = BlockchainService.generate_report_hash(report_hash_payload)
+    report.report_hash = report_hash
+    db.commit()
+    db.refresh(report)
+
+    try:
+        blockchain = BlockchainService()
+
+        chain_result = await blockchain.submit_to_blockchain(
+            report_id=report.report_id,
+            report_hash=report_hash,
+            company_name=report.company_name,
+            co2_kg=int(report.total_co2_tonnes * 1000),
+        )
+
+        tx_hash = str(chain_result.get("tx_hash", ""))
+        verified = bool(tx_hash)
+        blockchain_timestamp = datetime.now(timezone.utc).isoformat()
+
+        report.report_hash = report_hash
+        report.tx_hash = tx_hash
+        report.block_number = int(chain_result.get("block_number", 0) or 0)
+        report.polygonscan_url = str(chain_result.get("polygonscan_url", ""))
+        report.is_blockchain_certified = verified
+        report.hash_verified = True
+        report.blockchain_verified_at = datetime.now(timezone.utc)
+        report.blockchain_note = None
+        db.commit()
+        db.refresh(report)
+    except Exception as blockchain_err:
+        report.is_blockchain_certified = False
+        report.hash_verified = False
+        report.blockchain_note = "Blockchain verification unavailable"
+        report.blockchain_verified_at = None
+        db.commit()
+        db.refresh(report)
+        blockchain_note = "Blockchain verification unavailable"
+        warnings.append(blockchain_note)
+        logger.warn(
+            "auto_blockchain_certification_failed",
+            {"report_id": report.report_id, "error": str(blockchain_err)},
+        )
+
+    logger.info(
+        "calculate_completed",
+        {
+            "report_id": report_id,
+            "total_co2_tonnes": calc_result["total_co2_tonnes"],
+            "verification_status": str(verification_result["verification_status"]),
+            "consistency_flags": len(consistency_flags),
+        },
+    )
+
     return CalculateFullResponse(
         report_id=report_id,
         calculation_result=CalculationResponse(**calc_result),
+        benchmark_comparison=benchmark_comparison,
         recommendations=recommendations,
         expected_energy=float(verification_result["expected_energy"]),
         deviation_ratio=round(twin_deviation_ratio, 4),
@@ -494,6 +676,12 @@ async def calculate_emissions(
         requires_evidence=requires_evidence,
         verification_notes=verification_notes,
         warnings=warnings,
+        verified=verified,
+        hash=report_hash,
+        blockchain_note=blockchain_note,
+        tx_hash=tx_hash,
+        blockchain_timestamp=blockchain_timestamp,
+        eu_report=eu_report,
     )
 
 

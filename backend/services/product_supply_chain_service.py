@@ -40,7 +40,7 @@ class ProductSupplyChainService:
         self.firecrawl_api_key = os.getenv("FIRECRAWL_API_KEY", "").strip()
 
         self.cerebras_api_key = os.getenv("CEREBRAS_API_KEY", "").strip()
-        self.cerebras_model = os.getenv("CEREBRAS_MODEL", "llama-3.3-70b")
+        self.cerebras_model = os.getenv("CEREBRAS_MODEL", "qwen-3-235b-a22b-instruct-2507")
         self.cerebras_base_url = os.getenv("CEREBRAS_BASE_URL", "https://api.cerebras.ai/v1")
 
     async def discover_supply_chain(
@@ -96,22 +96,6 @@ class ProductSupplyChainService:
                 db.close()
                 
         # 2. Fallback to normal AI processing if not seeded
-        query_plan = await self._plan_search_queries_with_llm(
-            product_name=product_name,
-            sector=sector,
-            company_name=company_name,
-            potential_supplier=potential_supplier,
-        )
-
-        exa_company_results = await self._search_exa(query_plan["company_query"])
-        tavily_company_results = await self._search_tavily(query_plan["company_query"])
-        exa_supplier_results = await self._search_exa(query_plan["supplier_query"])
-        tavily_supplier_results = await self._search_tavily(query_plan["supplier_query"])
-
-        exa_results = self._dedupe_results(exa_company_results + exa_supplier_results)
-        tavily_results = self._dedupe_results(tavily_company_results + tavily_supplier_results)
-        websites = self._extract_websites(exa_results, tavily_results)
-
         query_plan = await self._plan_search_queries_with_llm(
             product_name=product_name,
             sector=sector,

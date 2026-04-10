@@ -5,7 +5,7 @@
 import { ShieldCheck, ShieldX, ExternalLink, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 
-export default function BlockchainBadge({ certified, txHash, blockNumber, polygonscanUrl, reportHash }) {
+export default function BlockchainBadge({ certified, txHash, blockNumber, polygonscanUrl, reportHash, verifiedAt, hashVerified = true }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (text) => {
@@ -62,6 +62,16 @@ export default function BlockchainBadge({ certified, txHash, blockNumber, polygo
           <div className="bg-white/70 rounded-lg px-3 py-2">
             <p className="text-xs text-gray-500 font-medium">Report Hash</p>
             <p className="text-xs font-mono text-gray-700 truncate">{reportHash}</p>
+            <p className={`text-xs mt-1 font-semibold ${hashVerified ? 'text-green-700' : 'text-red-600'}`}>
+              {hashVerified ? 'Integrity verified' : 'Report integrity compromised'}
+            </p>
+          </div>
+        )}
+
+        {verifiedAt && (
+          <div className="bg-white/70 rounded-lg px-3 py-2">
+            <p className="text-xs text-gray-500 font-medium">Verification Timestamp</p>
+            <p className="text-xs text-gray-700">{new Date(verifiedAt).toLocaleString()}</p>
           </div>
         )}
 

@@ -149,11 +149,11 @@ export default function Dashboard() {
                     <td className="px-8 py-6">
                       {r.is_blockchain_certified ? (
                         <span className="badge-success text-sm font-bold px-4 py-2 border-2 border-green-200 bg-green-50 shadow-sm text-green-800 flex flex-row items-center gap-2 max-w-fit">
-                           <ShieldCheck className="w-4 h-4" /> Certified
+                          <ShieldCheck className="w-4 h-4" /> Certified
                         </span>
                       ) : (
                         <span className="badge-warning text-sm font-bold flex flex-row items-center gap-2 max-w-fit">
-                           Draft
+                          Draft
                         </span>
                       )}
                     </td>

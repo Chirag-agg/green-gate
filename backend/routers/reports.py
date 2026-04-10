@@ -9,18 +9,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from fastapi.responses import JSONResponse
+from fastapi.responses import Response
 
 from database import get_db
 from models import User, CarbonReport
 from routers.auth import get_current_user
 from services.blockchain import BlockchainService
-from services.cbam_report import generate_cbam_report
+from services.cbam_report import generate_cbam_report, generate_cbam_report_pdf
+from services.cbam_xml_service import generate_cbam_xml
+from services.verification_engine import VerificationEngine
+from utils.logger import get_logger
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
+logger = get_logger("reports_router")
 
 EVIDENCE_STORAGE_DIR = (
     Path(__file__).resolve().parent.parent / "data" / "evidence_uploads"
@@ -85,6 +89,9 @@ class ReportDetail(BaseModel):
     tx_hash: Optional[str] = None
     block_number: Optional[int] = None
     polygonscan_url: Optional[str] = None
+    blockchain_verified_at: Optional[str] = None
+    blockchain_note: Optional[str] = None
+    hash_verified: Optional[bool] = None
     is_blockchain_certified: bool
     created_at: str
 
@@ -95,14 +102,42 @@ class ReportDetail(BaseModel):
 class CertifyResponse(BaseModel):
     report_id: str
     report_hash: str
-    tx_hash: str
-    polygonscan_url: str
-    block_number: int
+    tx_hash: Optional[str] = None
+    polygonscan_url: Optional[str] = None
+    block_number: Optional[int] = None
+    hash_verified: bool = True
+    blockchain_verified_at: Optional[str] = None
+    verified: bool = True
+    note: Optional[str] = None
 
 
 class EvidenceUploadResponse(BaseModel):
     report_id: str
     uploaded_files: list[str]
+
+
+class ReportConsistencyResponse(BaseModel):
+    report_id: str
+    is_consistent: bool
+    flags: list[str]
+    stored_total_co2_tonnes: float
+    recalculated_total_co2_tonnes: float
+    stored_co2_per_tonne_product: float
+    recalculated_co2_per_tonne_product: float
+    benchmark_status: str
+    benchmark_vs_pct: float
+
+
+def _build_report_hash_payload(report: CarbonReport) -> dict[str, object]:
+    """Create deterministic hash payload for tamper detection and chain storage."""
+    return {
+        "report_id": report.report_id,
+        "user_id": report.user_id,
+        "timestamp": report.created_at.isoformat() if report.created_at else "",
+        "total_co2_tonnes": float(report.total_co2_tonnes or 0.0),
+        "co2_per_tonne_product": float(report.co2_per_tonne_product or 0.0),
+        "cbam_liability_eur": float(report.cbam_liability_eur or 0.0),
+    }
 
 
 def _store_evidence_file(report_id: str, upload: UploadFile) -> str:
@@ -122,6 +157,95 @@ def _store_evidence_file(report_id: str, upload: UploadFile) -> str:
     destination.write_bytes(file_bytes)
 
     return str(destination.relative_to(Path(__file__).resolve().parent.parent)).replace("\\", "/")
+
+
+def _build_report_xml_payload(
+    report: CarbonReport,
+    current_user: User,
+    input_data: dict[str, object],
+    calc_result: dict[str, object],
+) -> dict[str, object]:
+    product_payload = input_data.get("product") if isinstance(input_data.get("product"), dict) else {}
+    cbam_payload = input_data.get("cbam") if isinstance(input_data.get("cbam"), dict) else {}
+
+    eu_embedded = float(report.eu_embedded_co2_tonnes or 0.0)
+    cbam_eur = float(report.cbam_liability_eur or 0.0)
+    ets_price_fallback = (cbam_eur / eu_embedded) if eu_embedded > 0 else 0.0
+
+    importer_name = (
+        str(input_data.get("importer_name") or "").strip()
+        or str(input_data.get("eu_importer_name") or "").strip()
+        or "EU Importer (Unknown)"
+    )
+    importer_country = (
+        str(input_data.get("importer_country") or "").strip()
+        or str(input_data.get("eu_country") or "").strip()
+        or "EU"
+    )
+    eori = (
+        str(input_data.get("eori") or "").strip()
+        or str(input_data.get("importer_eori") or "").strip()
+        or str(current_user.iec_number or "").strip()
+        or str(current_user.gstin or "").strip()
+        or "UNKNOWN-EORI"
+    )
+
+    cn_code = (
+        str(product_payload.get("cn_code") if isinstance(product_payload, dict) else "").strip()
+        or str(input_data.get("cn_code") or "").strip()
+        or str(input_data.get("hsn_code") or "").strip()
+        or "N/A"
+    )
+    description = (
+        str(product_payload.get("description") if isinstance(product_payload, dict) else "").strip()
+        or str(input_data.get("product_description") or "").strip()
+        or str(input_data.get("product_name") or "").strip()
+        or f"{report.sector} product"
+    )
+    quantity = (
+        float(product_payload.get("quantity", 0.0))
+        if isinstance(product_payload, dict)
+        else 0.0
+    ) or float(report.eu_export_tonnes or 0.0) or float(report.annual_production_tonnes or 0.0)
+
+    verification_status = (
+        str(report.verification_status or "").strip()
+        or ("BlockchainVerified" if report.is_blockchain_certified else "SelfDeclared")
+    )
+
+    payload = {
+        "importer_name": importer_name,
+        "eori": eori,
+        "importer_country": importer_country,
+        "exporter_name": str(report.company_name or "N/A"),
+        "exporter_country": str(input_data.get("exporter_country") or "India"),
+        "installation_id": str(input_data.get("installation_id") or f"INST-{report.report_id}"),
+        "location": str(input_data.get("location") or report.state or "N/A"),
+        "product": {
+            "cn_code": cn_code,
+            "description": description,
+            "quantity": quantity,
+            "embedded_emissions": float(report.eu_embedded_co2_tonnes or 0.0),
+        },
+        "emissions": {
+            "scope1": float(report.scope1_co2_tonnes or 0.0),
+            "scope2": float(report.scope2_co2_tonnes or 0.0),
+            "total": float(report.total_co2_tonnes or 0.0),
+        },
+        "cbam": {
+            "ets_price": float(cbam_payload.get("ets_price", ets_price_fallback))
+            if isinstance(cbam_payload, dict)
+            else ets_price_fallback,
+            "total_cost": float(report.cbam_liability_eur or 0.0),
+        },
+        "verification": {
+            "status": verification_status,
+            "report_hash": str(report.report_hash or "N/A"),
+        },
+        "report_id": str(report.report_id),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    return payload
 
 
 # ──── Endpoints ────
@@ -177,6 +301,23 @@ def get_report(
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
+    if report.report_hash:
+        recomputed_hash = BlockchainService.generate_report_hash(_build_report_hash_payload(report))
+        hash_verified = recomputed_hash == report.report_hash
+        report.hash_verified = hash_verified
+        if not hash_verified:
+            logger.warn(
+                "report_integrity_compromised",
+                {
+                    "report_id": report.report_id,
+                    "stored_hash": report.report_hash,
+                    "recomputed_hash": recomputed_hash,
+                },
+            )
+            report.blockchain_note = "Report integrity compromised"
+        db.commit()
+        db.refresh(report)
+
     return ReportDetail(
         report_id=report.report_id,
         company_name=report.company_name,
@@ -213,6 +354,11 @@ def get_report(
         tx_hash=report.tx_hash,
         block_number=report.block_number,
         polygonscan_url=report.polygonscan_url,
+        blockchain_verified_at=(
+            report.blockchain_verified_at.isoformat() if report.blockchain_verified_at else None
+        ),
+        blockchain_note=report.blockchain_note,
+        hash_verified=report.hash_verified,
         is_blockchain_certified=report.is_blockchain_certified,
         created_at=report.created_at.isoformat() if report.created_at else "",
     )
@@ -256,22 +402,19 @@ async def certify_report(
     try:
         blockchain = BlockchainService()
 
-        # Build report dict for hashing
-        report_data = {
-            "report_id": report.report_id,
-            "company_name": report.company_name,
-            "sector": report.sector,
-            "state": report.state,
-            "total_co2_tonnes": report.total_co2_tonnes,
-            "scope1_co2_tonnes": report.scope1_co2_tonnes,
-            "scope2_co2_tonnes": report.scope2_co2_tonnes,
-            "co2_per_tonne_product": report.co2_per_tonne_product,
-            "eu_embedded_co2_tonnes": report.eu_embedded_co2_tonnes,
-            "cbam_liability_eur": report.cbam_liability_eur,
-        }
-
-        report_hash = blockchain.generate_report_hash(report_data)
+        # Store and certify only deterministic report hash payload.
+        report_hash_payload = _build_report_hash_payload(report)
+        report_hash = blockchain.generate_report_hash(report_hash_payload)
         co2_kg = int(report.total_co2_tonnes * 1000)
+
+        logger.info(
+            "certify_requested",
+            {
+                "report_id": report.report_id,
+                "company_name": report.company_name,
+                "co2_kg": co2_kg,
+            },
+        )
 
         result = await blockchain.submit_to_blockchain(
             report_id=report.report_id,
@@ -286,8 +429,20 @@ async def certify_report(
         report.block_number = result["block_number"]
         report.polygonscan_url = result["polygonscan_url"]
         report.is_blockchain_certified = True
+        report.hash_verified = True
+        report.blockchain_note = None
+        report.blockchain_verified_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(report)
+
+        logger.info(
+            "certify_completed",
+            {
+                "report_id": report.report_id,
+                "tx_hash": result["tx_hash"],
+                "block_number": result["block_number"],
+            },
+        )
 
         return CertifyResponse(
             report_id=report.report_id,
@@ -295,24 +450,68 @@ async def certify_report(
             tx_hash=result["tx_hash"],
             polygonscan_url=result["polygonscan_url"],
             block_number=result["block_number"],
+            hash_verified=True,
+            blockchain_verified_at=(
+                report.blockchain_verified_at.isoformat()
+                if report.blockchain_verified_at
+                else None
+            ),
+            verified=True,
+            note=None,
         )
 
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.warn("certify_failed_validation", {"report_id": report_id, "error": str(e)})
+        report_hash = report.report_hash or BlockchainService.generate_report_hash(_build_report_hash_payload(report))
+        report.report_hash = report_hash
+        report.is_blockchain_certified = False
+        report.hash_verified = False
+        report.blockchain_note = "Blockchain verification unavailable"
+        report.blockchain_verified_at = None
+        db.commit()
+        db.refresh(report)
+        return CertifyResponse(
+            report_id=report.report_id,
+            report_hash=report_hash,
+            tx_hash=None,
+            polygonscan_url=None,
+            block_number=None,
+            hash_verified=False,
+            blockchain_verified_at=None,
+            verified=False,
+            note="Blockchain verification unavailable",
+        )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Blockchain certification failed: {str(e)}",
+        logger.error("certify_failed", {"report_id": report_id, "error": str(e)})
+        report_hash = report.report_hash or BlockchainService.generate_report_hash(_build_report_hash_payload(report))
+        report.report_hash = report_hash
+        report.is_blockchain_certified = False
+        report.hash_verified = False
+        report.blockchain_note = "Blockchain verification unavailable"
+        report.blockchain_verified_at = None
+        db.commit()
+        db.refresh(report)
+        return CertifyResponse(
+            report_id=report.report_id,
+            report_hash=report_hash,
+            tx_hash=None,
+            polygonscan_url=None,
+            block_number=None,
+            hash_verified=False,
+            blockchain_verified_at=None,
+            verified=False,
+            note="Blockchain verification unavailable",
         )
 
 
 @router.get("/{report_id}/download")
 def download_report(
     report_id: str,
+    format: str = Query(default="xml", pattern="^(xml|pdf)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Download a full CBAM report as JSON."""
+    """Download report as EU CBAM XML (default) or legacy PDF (format=pdf)."""
     report = (
         db.query(CarbonReport)
         .filter(
@@ -330,6 +529,25 @@ def download_report(
         json.loads(report.recommendations_json) if report.recommendations_json else []
     )
 
+    if format == "xml":
+        xml_payload = _build_report_xml_payload(report, current_user, input_data, calc_result)
+        xml_text = generate_cbam_xml(xml_payload)
+        logger.info(
+            "download_generated_xml",
+            {
+                "report_id": report_id,
+                "is_certified": report.tx_hash is not None,
+                "xml_report_id": xml_payload.get("report_id"),
+            },
+        )
+        return Response(
+            content=xml_text.encode("utf-8"),
+            media_type="application/xml",
+            headers={
+                "Content-Disposition": f'attachment; filename="{report.report_id}_cbam_report.xml"'
+            },
+        )
+
     cbam_report = generate_cbam_report(
         input_data=input_data,
         calculation_result=calc_result,
@@ -339,10 +557,39 @@ def download_report(
         report_hash=report.report_hash,
     )
 
-    return JSONResponse(
-        content=cbam_report,
+    logger.info(
+        "download_generated",
+        {
+            "report_id": report_id,
+            "has_recommendations": len(recommendations) > 0,
+            "is_certified": report.tx_hash is not None,
+        },
+    )
+
+    pdf_bytes = generate_cbam_report_pdf(
+        report_payload=cbam_report,
+        report_id=str(report.report_id),
+        company_name=str(report.company_name),
+        sector=str(report.sector),
+        state=str(report.state),
+        created_at_iso=(report.created_at.isoformat() if report.created_at else ""),
+        total_co2_tonnes=float(report.total_co2_tonnes or 0.0),
+        scope1_co2_tonnes=float(report.scope1_co2_tonnes or 0.0),
+        scope2_co2_tonnes=float(report.scope2_co2_tonnes or 0.0),
+        co2_per_tonne_product=float(report.co2_per_tonne_product or 0.0),
+        eu_export_tonnes=float(report.eu_export_tonnes or 0.0),
+        eu_embedded_co2_tonnes=float(report.eu_embedded_co2_tonnes or 0.0),
+        cbam_liability_eur=float(report.cbam_liability_eur or 0.0),
+        cbam_liability_inr=float(report.cbam_liability_inr or 0.0),
+        tx_hash=(str(report.tx_hash) if report.tx_hash else None),
+        report_hash=(str(report.report_hash) if report.report_hash else None),
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="{report.report_id}_cbam_report.json"'
+            "Content-Disposition": f'attachment; filename="{report.report_id}_cbam_report.pdf"'
         },
     )
 
@@ -386,4 +633,70 @@ async def upload_evidence(
     db.commit()
     db.refresh(report)
 
+    logger.info(
+        "evidence_uploaded",
+        {"report_id": report_id, "uploaded_count": len(uploaded_paths)},
+    )
+
     return EvidenceUploadResponse(report_id=report_id, uploaded_files=uploaded_paths)
+
+
+@router.get("/{report_id}/verify-consistency", response_model=ReportConsistencyResponse)
+def verify_report_consistency(
+    report_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ReportConsistencyResponse:
+    """Recompute emissions + benchmark and compare against stored report output."""
+    report = (
+        db.query(CarbonReport)
+        .filter(
+            CarbonReport.report_id == report_id,
+            CarbonReport.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    if not report.full_input_json:
+        raise HTTPException(status_code=400, detail="Report input snapshot is missing")
+
+    input_data = json.loads(report.full_input_json)
+    stored_output = json.loads(report.full_output_json) if report.full_output_json else {
+        "total_co2_tonnes": report.total_co2_tonnes,
+        "co2_per_tonne_product": report.co2_per_tonne_product,
+        "cbam_liability_eur": report.cbam_liability_eur,
+    }
+
+    verification_engine = VerificationEngine()
+    consistency = verification_engine.verify_report_consistency(
+        input_data=input_data,
+        stored_output=stored_output,
+        industry=report.sector,
+        annual_production_tonnes=float(report.annual_production_tonnes or 0.0),
+    )
+
+    recalculated = consistency.get("recalculated", {})
+    benchmark_comparison = consistency.get("benchmark_comparison", {})
+
+    logger.info(
+        "consistency_check_completed",
+        {
+            "report_id": report_id,
+            "is_consistent": bool(consistency.get("is_consistent", False)),
+            "flag_count": len(consistency.get("flags", [])),
+        },
+    )
+
+    return ReportConsistencyResponse(
+        report_id=report_id,
+        is_consistent=bool(consistency.get("is_consistent", False)),
+        flags=[str(flag) for flag in consistency.get("flags", [])],
+        stored_total_co2_tonnes=float(stored_output.get("total_co2_tonnes", 0.0) or 0.0),
+        recalculated_total_co2_tonnes=float(recalculated.get("total_co2_tonnes", 0.0) or 0.0),
+        stored_co2_per_tonne_product=float(stored_output.get("co2_per_tonne_product", 0.0) or 0.0),
+        recalculated_co2_per_tonne_product=float(recalculated.get("co2_per_tonne_product", 0.0) or 0.0),
+        benchmark_status=str(benchmark_comparison.get("status", "unknown")),
+        benchmark_vs_pct=float(benchmark_comparison.get("vs_benchmark_pct", 0.0) or 0.0),
+    )

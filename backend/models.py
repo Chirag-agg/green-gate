@@ -11,6 +11,7 @@ from sqlalchemy import (
     Text,
     DateTime,
     ForeignKey,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from database import Base
@@ -34,6 +35,12 @@ class User(Base):
     iec_number = Column(String, nullable=True)
     state = Column(String, nullable=True)
     sector = Column(String, nullable=True)
+    industry = Column(String, nullable=True)
+    scale = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    energy_source = Column(String, nullable=True)
+    production_type = Column(String, nullable=True)
+    exports_to_eu = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     reports = relationship("CarbonReport", back_populates="user")
@@ -84,6 +91,9 @@ class CarbonReport(Base):
     block_number = Column(Integer, nullable=True)
     polygonscan_url = Column(String, nullable=True)
     is_blockchain_certified = Column(Boolean, default=False)
+    blockchain_verified_at = Column(DateTime, nullable=True)
+    blockchain_note = Column(Text, nullable=True)
+    hash_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime,
@@ -92,6 +102,39 @@ class CarbonReport(Base):
     )
 
     user = relationship("User", back_populates="reports")
+
+
+class IndustryBenchmark(Base):
+    """Curated hybrid benchmark dataset row for similarity-based matching."""
+
+    __tablename__ = "industry_benchmarks"
+    __table_args__ = (
+        UniqueConstraint(
+            "industry",
+            "machinery_type",
+            "energy_source",
+            "scale",
+            "region",
+            name="uq_industry_benchmark_identity",
+        ),
+    )
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    industry = Column(String, nullable=False, index=True)
+    machinery_type = Column(String, nullable=False, index=True)
+    energy_source = Column(String, nullable=False, index=True)
+    scale = Column(String, nullable=False, index=True)
+    avg_intensity = Column(Float, nullable=False)
+    best_in_class = Column(Float, nullable=False)
+    region = Column(String, nullable=False, default="India", index=True)
+    source = Column(String, nullable=False, default="curated")
+    confidence = Column(String, nullable=False, default="medium")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
 
 class CompanyProfile(Base):

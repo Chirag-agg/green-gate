@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Leaf, Menu, X, LogOut, LayoutDashboard, Calculator, ShieldCheck, Network, Volume2 } from 'lucide-react';
+import { Leaf, Menu, X, LogOut, LayoutDashboard, Calculator, ShieldCheck, Network, Volume2, Mic } from 'lucide-react';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -39,7 +39,7 @@ export default function Navbar() {
 
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-2">
-              <button 
+              <button
                 className="p-3 mr-4 rounded-xl text-surface-500 hover:text-primary-700 hover:bg-primary-50 transition-colors"
                 title="Read Aloud Help"
                 aria-label="Audio Help"
@@ -89,6 +89,16 @@ export default function Navbar() {
                     <ShieldCheck className="w-5 h-5" />
                     Verify
                   </Link>
+                  <Link
+                    to="/voice-test"
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-300 ${isActive('/voice-test')
+                      ? 'bg-primary-50 text-primary-800 shadow-sm'
+                      : 'text-surface-600 hover:bg-surface-50 hover:text-surface-900'
+                      }`}
+                  >
+                    <Mic className="w-5 h-5" />
+                    Voice Test
+                  </Link>
                   <div className="w-px h-8 bg-surface-200 mx-2" />
                   <span className="text-base font-medium text-surface-600 mr-2 bg-surface-50 px-4 py-2 rounded-xl">
                     {user.company_name || user.email}
@@ -124,7 +134,7 @@ export default function Navbar() {
 
             {/* Mobile Hamburger */}
             <div className="flex items-center gap-4 lg:hidden">
-              <button 
+              <button
                 className="p-2 rounded-xl text-surface-500 hover:text-primary-700 hover:bg-primary-50 transition-colors"
                 aria-label="Audio Help"
               >
@@ -157,6 +167,9 @@ export default function Navbar() {
                   </Link>
                   <Link to="/verify" className="flex items-center gap-3 px-5 py-4 rounded-2xl text-lg font-semibold text-surface-800 hover:bg-white" onClick={() => setMobileOpen(false)}>
                     <ShieldCheck className="w-6 h-6 text-primary-600" /> Verify
+                  </Link>
+                  <Link to="/voice-test" className="flex items-center gap-3 px-5 py-4 rounded-2xl text-lg font-semibold text-surface-800 hover:bg-white" onClick={() => setMobileOpen(false)}>
+                    <Mic className="w-6 h-6 text-primary-600" /> Voice Test
                   </Link>
                   <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="flex items-center gap-3 w-full text-left px-5 py-4 rounded-2xl text-lg font-semibold text-red-600 hover:bg-red-50">
                     <LogOut className="w-6 h-6" /> Logout

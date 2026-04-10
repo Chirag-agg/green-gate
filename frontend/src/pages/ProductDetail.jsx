@@ -114,24 +114,24 @@ export default function ProductDetail() {
 
             return {
                 id: node.id,
-                position: { x: 70 + index * 240, y: 80 },
+                position: { x: 70 + index * 280, y: 80 },
                 data: {
                     label: (
                         <div className="flex flex-col h-full w-full justify-center">
-                            <p className="text-sm font-bold text-gray-900 leading-tight truncate">{node.company_name}</p>
-                            <p className="text-xs text-gray-600 mt-1 truncate">{node.location}</p>
-                            <p className="text-[11px] font-semibold uppercase tracking-wide mt-2" style={{ color: color.text }}>{roleLabel(node.role)}</p>
+                            <p className="text-base font-bold text-gray-900 leading-snug">{node.company_name}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">{node.location}</p>
+                            <p className="text-xs font-semibold uppercase tracking-wide mt-2" style={{ color: color.text }}>{roleLabel(node.role)}</p>
                             
                             <div className="mt-auto pt-2 border-t border-black/10 flex justify-between items-end">
                                 <div>
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Emissions</p>
+                                    <p className="text-xs text-gray-500 uppercase tracking-wide">Emissions</p>
                                     <p className="text-sm font-bold" style={{ color: color.text }}>
                                         {emissions > 0 ? `${emissions.toLocaleString(undefined, {maximumFractionDigits: 0})} tCO₂` : '—'}
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Confidence</p>
-                                    <p className="text-xs font-semibold" style={{ color: color.text }}>
+                                    <p className="text-xs text-gray-500 uppercase tracking-wide">Confidence</p>
+                                    <p className="text-sm font-semibold" style={{ color: color.text }}>
                                         {isPendingAttestation ? 'Pending' : `${(confidence * 100).toFixed(0)}%`}
                                     </p>
                                 </div>
@@ -153,15 +153,17 @@ export default function ProductDetail() {
                     ),
                 },
                 style: {
-                    width: 220,
-                    height: 120,
+                    width: 280,
+                    height: 140,
                     borderRadius: 16,
-                    border: `1px solid ${color.border}`,
+                    border: `2px solid ${color.border}`,
                     background: color.bg,
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-                    padding: '12px 16px',
+                    padding: '14px 18px',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    wordWrap: 'break-word',
+                    overflow: 'hidden'
                 },
             };
         });

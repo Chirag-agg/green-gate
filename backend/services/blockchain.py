@@ -6,14 +6,15 @@ on Polygon Amoy testnet via web3.py.
 import hashlib
 import json
 import os
-import logging
 from datetime import datetime, timezone
 from typing import Any
 
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
-logger = logging.getLogger(__name__)
+from utils.logger import get_logger
+
+logger = get_logger("blockchain_service")
 
 # Minimal ABI for the CarbonReportRegistry contract
 CONTRACT_ABI: list[dict[str, Any]] = [
@@ -97,6 +98,12 @@ class BlockchainService:
         )
         contract_address: str = os.getenv("CONTRACT_ADDRESS", "")
         self.signer_key: str = os.getenv("SIGNER_PRIVATE_KEY", "")
+        self.mock_mode: bool = os.getenv("MOCK_BLOCKCHAIN", "false").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
 
         self.w3 = Web3(Web3.HTTPProvider(rpc_url))
         # Inject POA middleware for Polygon (Amoy is a POA chain)
@@ -104,7 +111,9 @@ class BlockchainService:
 
         self.is_connected: bool = self.w3.is_connected()
         if not self.is_connected:
-            logger.warning(f"Could not connect to blockchain RPC at {rpc_url}")
+            logger.warn("rpc_connection_failed", {"rpc_url": rpc_url})
+        else:
+            logger.info("rpc_connected", {"rpc_url": rpc_url})
 
         # Try to load full ABI from compiled artifact, fall back to minimal ABI
         abi = CONTRACT_ABI
@@ -127,15 +136,23 @@ class BlockchainService:
             )
         else:
             self.contract = None
-            logger.warning("CONTRACT_ADDRESS not set — blockchain features disabled")
+            logger.warn("contract_missing", {"message": "CONTRACT_ADDRESS not set"})
 
         if self.signer_key and self.signer_key != "0x_your_backend_wallet_private_key":
             self.account = self.w3.eth.account.from_key(self.signer_key)
         else:
             self.account = None
-            logger.warning(
-                "SIGNER_PRIVATE_KEY not set — blockchain write features disabled"
-            )
+            logger.warn("signer_missing", {"message": "SIGNER_PRIVATE_KEY not set"})
+
+        logger.info(
+            "service_initialized",
+            {
+                "is_connected": self.is_connected,
+                "contract_configured": self.contract is not None,
+                "signer_configured": self.account is not None,
+                "mock_mode": self.mock_mode,
+            },
+        )
 
     @staticmethod
     def generate_report_hash(report_dict: dict[str, Any]) -> str:
@@ -172,12 +189,38 @@ class BlockchainService:
             Dictionary with tx_hash, block_number, and polygonscan_url.
         """
         if not self.contract or not self.account:
+            if self.mock_mode:
+                fake_tx_hash = "0x" + hashlib.sha256(f"{report_id}:{report_hash}".encode("utf-8")).hexdigest()
+                logger.warn(
+                    "mock_submit_used",
+                    {
+                        "report_id": report_id,
+                        "report_hash": report_hash,
+                        "company_name": company_name,
+                        "co2_kg": co2_kg,
+                    },
+                )
+                return {
+                    "tx_hash": fake_tx_hash,
+                    "block_number": 0,
+                    "polygonscan_url": "mock://local-chain/tx/" + fake_tx_hash,
+                }
             raise ValueError(
                 "Blockchain service not configured. "
                 "Set CONTRACT_ADDRESS and SIGNER_PRIVATE_KEY in .env"
             )
 
         try:
+            logger.info(
+                "submit_requested",
+                {
+                    "report_id": report_id,
+                    "report_hash": report_hash,
+                    "company_name": company_name,
+                    "co2_kg": co2_kg,
+                },
+            )
+
             hash_bytes = bytes.fromhex(report_hash[2:]) if report_hash.startswith("0x") else bytes.fromhex(report_hash)
 
             # Build the transaction
@@ -225,7 +268,7 @@ class BlockchainService:
         except ValueError as e:
             raise e
         except Exception as e:
-            logger.error(f"Blockchain submission failed: {e}")
+            logger.error("submit_failed", {"error": str(e), "report_id": report_id})
             raise RuntimeError(f"Blockchain transaction failed: {str(e)}")
 
     async def verify_on_blockchain(self, report_hash: str) -> dict[str, Any]:
@@ -244,6 +287,7 @@ class BlockchainService:
             )
 
         try:
+            logger.info("verify_requested", {"report_hash": report_hash})
             hash_bytes = bytes.fromhex(report_hash[2:]) if report_hash.startswith("0x") else bytes.fromhex(report_hash)
 
             is_valid, report_id, timestamp = self.contract.functions.verifyReport(
@@ -266,5 +310,5 @@ class BlockchainService:
         except ValueError as e:
             raise e
         except Exception as e:
-            logger.error(f"Blockchain verification failed: {e}")
+            logger.error("verify_failed", {"error": str(e), "report_hash": report_hash})
             raise RuntimeError(f"Blockchain verification failed: {str(e)}")

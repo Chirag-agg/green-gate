@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CBAMReport>
+    <ReportID>CBAM-19396DDE4FA6</ReportID>
+    <GeneratedAt>2026-04-10T07:46:56.737432+00:00</GeneratedAt>
+    <Declarant>
+        <ImporterName>EU Importer Ltd</ImporterName>
+        <EORI>EU123456789</EORI>
+        <Country>Germany</Country>
+    </Declarant>
+    <Exporter>
+        <Name>Arvind Limited</Name>
+        <Country>India</Country>
+    </Exporter>
+    <Installation>
+        <InstallationID>INST123</InstallationID>
+        <Location>Gujarat</Location>
+    </Installation>
+    <Goods>
+        <Product>
+            <CNCode>5208</CNCode>
+            <Description>Woven Cotton Fabric</Description>
+            <Quantity unit="tonnes">60</Quantity>
+            <EmbeddedEmissions unit="tCO2">85.392</EmbeddedEmissions>
+        </Product>
+    </Goods>
+    <Emissions>
+        <Scope1 unit="tCO2">170.928</Scope1>
+        <Scope2 unit="tCO2">170.64</Scope2>
+        <Total unit="tCO2">341.568</Total>
+    </Emissions>
+    <CBAMCost>
+        <ETSPrice unit="EUR/tCO2">85</ETSPrice>
+        <TotalCost unit="EUR">7685.28</TotalCost>
+    </CBAMCost>
+    <Verification>
+        <Status>SelfDeclared</Status>
+        <ReportHash>0x4138bf...</ReportHash>
+    </Verification>
+</CBAMReport>

@@ -16,6 +16,7 @@ import Verify from './pages/Verify';
 import ProductNew from './pages/ProductNew';
 import ProductDetail from './pages/ProductDetail';
 import ProductOptimize from './pages/ProductOptimize';
+import VoiceTest from './pages/VoiceTest';
 
 /**
  * Protected route wrapper — redirects to login if not authenticated.
@@ -85,6 +86,7 @@ export default function App() {
             <Route path="/product/:productId" element={<ProductDetail />} />
             <Route path="/product/:productId/optimize" element={<ProductOptimize />} />
             <Route path="/report/:reportId" element={<Report />} />
+            <Route path="/voice-test" element={<VoiceTest />} />
           </Route>
         </Route>
 

@@ -6,20 +6,60 @@ AI + Blockchain CBAM Carbon Compliance Platform for Indian MSME Exporters.
 import os
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
 
-from database import engine, Base
-from routers import auth, calculator, reports, verify, products
+from database import engine, Base, SessionLocal
+from models import IndustryBenchmark
+from routers import auth, calculator, reports, verify, products, voice_ai, cbam_xml
+from seed_demo_data import seed_demo_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+CURATED_BENCHMARK_SEED: list[dict[str, str | float]] = [
+    {
+        "industry": "textile",
+        "machinery_type": "dyeing",
+        "energy_source": "coal",
+        "scale": "small",
+        "avg_intensity": 1.2,
+        "best_in_class": 0.6,
+        "region": "India",
+        "source": "BEE + industry estimate",
+        "confidence": "medium",
+    },
+    {
+        "industry": "steel",
+        "machinery_type": "blast_furnace",
+        "energy_source": "coal",
+        "scale": "medium",
+        "avg_intensity": 2.5,
+        "best_in_class": 1.5,
+        "region": "India",
+        "source": "industry data",
+        "confidence": "medium",
+    },
+    {
+        "industry": "food",
+        "machinery_type": "automated",
+        "energy_source": "electric",
+        "scale": "micro",
+        "avg_intensity": 0.3,
+        "best_in_class": 0.15,
+        "region": "India",
+        "source": "industry estimate",
+        "confidence": "low",
+    },
+]
 
 
 def _ensure_carbon_report_schema_compatibility() -> None:
@@ -40,6 +80,9 @@ def _ensure_carbon_report_schema_compatibility() -> None:
         "requires_evidence": "BOOLEAN",
         "evidence_files": "TEXT",
         "verification_notes": "TEXT",
+        "blockchain_verified_at": "DATETIME",
+        "blockchain_note": "TEXT",
+        "hash_verified": "BOOLEAN",
     }
 
     with engine.begin() as connection:
@@ -84,6 +127,73 @@ def _ensure_product_schema_compatibility() -> None:
             logger.info("✅ Added missing column supply_chain_nodes.%s", column_name)
 
 
+def _ensure_user_schema_compatibility() -> None:
+    """Add newly introduced users columns for personalization context."""
+    user_required_columns = {
+        "industry": "VARCHAR",
+        "scale": "VARCHAR",
+        "location": "VARCHAR",
+        "energy_source": "VARCHAR",
+        "production_type": "VARCHAR",
+        "exports_to_eu": "BOOLEAN",
+    }
+
+    with engine.begin() as connection:
+        users_info = connection.exec_driver_sql("PRAGMA table_info(users)").fetchall()
+        users_existing = {row[1] for row in users_info}
+        for column_name, column_type in user_required_columns.items():
+            if column_name in users_existing:
+                continue
+            connection.exec_driver_sql(f"ALTER TABLE users ADD COLUMN {column_name} {column_type}")
+            logger.info("✅ Added missing column users.%s", column_name)
+
+
+def _seed_curated_benchmarks() -> None:
+    """Seed mandatory curated benchmark dataset and avoid duplication on restart."""
+    db = SessionLocal()
+    try:
+        for row in CURATED_BENCHMARK_SEED:
+            industry = str(row.get("industry", ""))
+            machinery_type = str(row.get("machinery_type", ""))
+            energy_source = str(row.get("energy_source", ""))
+            scale = str(row.get("scale", ""))
+            region = str(row.get("region", "India"))
+
+            existing = (
+                db.query(IndustryBenchmark)
+                .filter(IndustryBenchmark.industry == industry)
+                .filter(IndustryBenchmark.machinery_type == machinery_type)
+                .filter(IndustryBenchmark.energy_source == energy_source)
+                .filter(IndustryBenchmark.scale == scale)
+                .filter(IndustryBenchmark.region == region)
+                .first()
+            )
+
+            if existing is None:
+                db.add(IndustryBenchmark(**row))
+                logger.info(
+                    "✅ Seeded benchmark: %s/%s/%s/%s/%s",
+                    industry,
+                    machinery_type,
+                    energy_source,
+                    scale,
+                    region,
+                )
+                continue
+
+            setattr(existing, "avg_intensity", float(row.get("avg_intensity", 0.0) or 0.0))
+            setattr(existing, "best_in_class", float(row.get("best_in_class", 0.0) or 0.0))
+            setattr(existing, "source", str(row.get("source", "curated")))
+            setattr(existing, "confidence", str(row.get("confidence", "medium")))
+
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Failed to seed curated benchmark dataset")
+    finally:
+        db.close()
+
+
 def _get_cors_origins() -> list[str]:
     """Resolve CORS origins from environment, with strict production defaults."""
     environment = os.getenv("ENVIRONMENT", "development").strip().lower()
@@ -107,6 +217,8 @@ def _get_cors_origins() -> list[str]:
     return [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
         "http://localhost:3000",
     ]
 
@@ -118,6 +230,13 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     _ensure_carbon_report_schema_compatibility()
     _ensure_product_schema_compatibility()
+    _ensure_user_schema_compatibility()
+    _seed_curated_benchmarks()
+    try:
+        demo_summary = await seed_demo_data()
+        logger.info("✅ Demo data seeded: %s", demo_summary.get("validation", {}))
+    except Exception:
+        logger.exception("Failed to seed demo data")
     logger.info("✅ Database tables created / verified")
     logger.info("🚀 GreenGate backend is running!")
     yield
@@ -153,6 +272,8 @@ app.include_router(calculator.router)
 app.include_router(reports.router)
 app.include_router(verify.router)
 app.include_router(products.router)
+app.include_router(voice_ai.router)
+app.include_router(cbam_xml.router)
 
 
 @app.get("/api/health", tags=["Health"])

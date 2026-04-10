@@ -4,7 +4,7 @@ Handles user registration, login (JWT), and profile retrieval.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Literal
 import os
 import bcrypt
 
@@ -21,13 +21,13 @@ from services.rate_limiter import rate_limit
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # JWT configuration
-JWT_SECRET_KEY: str | None = os.getenv("JWT_SECRET_KEY")
+JWT_SECRET_KEY: str | None = os.getenv("JWT_SECRET_KEY") or os.getenv("JWT_SECRET")
 JWT_ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
 
 if not JWT_SECRET_KEY:
     raise RuntimeError(
-        "JWT_SECRET_KEY is required. Configure it in backend/.env before starting the API."
+        "Missing JWT secret. Set JWT_SECRET or JWT_SECRET_KEY in backend/.env before starting the API."
     )
 
 # Password hashing
@@ -44,6 +44,12 @@ class UserRegisterRequest(BaseModel):
     iec_number: Optional[str] = None
     state: Optional[str] = None
     sector: Optional[str] = None
+    industry: Optional[str] = None
+    scale: Optional[Literal["micro", "small", "medium"]] = None
+    location: Optional[str] = None
+    energy_source: Optional[str] = None
+    production_type: Optional[str] = None
+    exports_to_eu: Optional[bool] = False
 
 
 class UserLoginRequest(BaseModel):
@@ -66,6 +72,12 @@ class UserProfile(BaseModel):
     iec_number: Optional[str] = None
     state: Optional[str] = None
     sector: Optional[str] = None
+    industry: Optional[str] = None
+    scale: Optional[Literal["micro", "small", "medium"]] = None
+    location: Optional[str] = None
+    energy_source: Optional[str] = None
+    production_type: Optional[str] = None
+    exports_to_eu: bool = False
     created_at: datetime
 
     class Config:
@@ -144,6 +156,12 @@ def register(request: UserRegisterRequest, db: Session = Depends(get_db)) -> Tok
         iec_number=request.iec_number,
         state=request.state,
         sector=request.sector,
+        industry=(request.industry or request.sector or "general"),
+        scale=(request.scale or "small"),
+        location=(request.location or request.state or "India"),
+        energy_source=(request.energy_source or "grid"),
+        production_type=(request.production_type or "mixed"),
+        exports_to_eu=bool(request.exports_to_eu),
     )
     db.add(user)
     db.commit()
@@ -190,5 +208,11 @@ def get_me(current_user: User = Depends(get_current_user)) -> UserProfile:
         iec_number=current_user.iec_number,
         state=current_user.state,
         sector=current_user.sector,
+        industry=current_user.industry,
+        scale=current_user.scale,
+        location=current_user.location,
+        energy_source=current_user.energy_source,
+        production_type=current_user.production_type,
+        exports_to_eu=bool(current_user.exports_to_eu),
         created_at=current_user.created_at,
     )
