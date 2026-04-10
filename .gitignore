@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+venv*/
+backend/.venv/
+backend/.venv*/
+backend/venv/
+backend/venv*/
+*/Lib/site-packages/
+
+# Node dependencies
+node_modules/
+*/node_modules/
+
+# Build and caches
+.cache/
+*.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
